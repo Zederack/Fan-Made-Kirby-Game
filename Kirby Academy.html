@@ -1,0 +1,4634 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Kirby Academy V1.20.0</title>
+<style>
+  @import url("https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap");
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: #0b1020;
+    overflow: hidden;
+    font-family: system-ui, sans-serif;
+    color: #fff;
+  }
+  #ui {
+    position: fixed;
+    top: 8px;
+    left: 8px;
+    z-index: 10;
+    font-size: 14px;
+    background: rgba(0,0,0,0.4);
+    padding: 6px 10px;
+    border-radius: 6px;
+  }
+  #ui span { margin-right: 10px; }
+  #starCoins {
+    color: #ffe14d;
+    font-weight: bold;
+  }
+  #shopWrapper {
+    position: fixed;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%) translateY(0);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    z-index: 20;
+    pointer-events: none;
+    transition: transform 0.55s cubic-bezier(0.2, 0.9, 0.25, 1);
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+  }
+  #shopWrapper.pulledUp {
+    transform: translateX(-50%) translateY(-120%);
+  }
+  #ropeContainer {
+    display: flex;
+    gap: 54px;
+    pointer-events: none;
+  }
+  .rope {
+    width: 8px;
+    height: 38px;
+    background:
+      repeating-linear-gradient(
+        180deg,
+        #5f3510 0px, #5f3510 4px,
+        #c8892a 4px, #c8892a 8px,
+        #8B5E1A 8px, #8B5E1A 12px
+      );
+    border-radius: 0;
+    box-shadow:
+      0 0 0 2px #3a1e04,
+      inset 2px 0 0 rgba(255,220,120,0.35),
+      inset -2px 0 0 rgba(0,0,0,0.35);
+    image-rendering: pixelated;
+  }
+  #shopBtn {
+    image-rendering: pixelated;
+    border-radius: 0;
+    font-family: "Press Start 2P", "Courier New", monospace;
+    pointer-events: all;
+    font-size: 15px;
+    font-weight: bold;
+    letter-spacing: 1px;
+    color: #e8ffe0;
+    background: radial-gradient(ellipse at 40% 35%, #3a9a3a, #145214);
+    border: 4px solid #0a3a0a;
+    padding: 7px 22px 8px;
+    cursor: pointer;
+    box-shadow:
+      0 4px 0 #071f07, 0 8px 14px rgba(0,0,0,0.45), inset 3px 3px 0 rgba(255,255,255,0.18), inset -3px -3px 0 rgba(0,0,0,0.28);
+    text-shadow: 2px 2px 0 rgba(0,0,0,0.75);
+    transition: filter 0.1s;
+    user-select: none;
+  }
+  #shopBtn:hover { filter: brightness(1.2); }
+  #shopBtn:active { filter: brightness(0.85); }
+
+  /* Shop overlay */
+  #shopScreen {
+    font-family: "Press Start 2P", "Courier New", monospace;
+    display: flex;
+    position: fixed;
+    inset: 0;
+    background: #4a2e0e;
+    z-index: 100;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    padding-top: 24px;
+    transform: translateY(-105%);
+    opacity: 0;
+    pointer-events: none;
+    transition: transform 0.6s cubic-bezier(0.18, 0.9, 0.24, 1), opacity 0.25s ease;
+  }
+  #shopScreen.open {
+    transform: translateY(0);
+    opacity: 1;
+    pointer-events: all;
+  }
+  #shopTitle {
+    font-family: "Press Start 2P", "Courier New", monospace;
+    font-size: 36px;
+    color: #ffe58a;
+    text-shadow: 0 2px 8px rgba(0,0,0,0.7), 0 0 20px rgba(255,200,50,0.4);
+    margin-bottom: 6px;
+    letter-spacing: 3px;
+  }
+  #shopCoins {
+    font-family: "Press Start 2P", "Courier New", monospace;
+    font-size: 18px;
+    color: #ffe14d;
+    margin-bottom: 18px;
+    text-shadow: 0 1px 4px rgba(0,0,0,0.6);
+  }
+  #shopMsg {
+    font-family: "Press Start 2P", "Courier New", monospace;
+    height: 24px;
+    font-size: 15px;
+    color: #ff6060;
+    margin-bottom: 10px;
+    text-shadow: 0 1px 3px rgba(0,0,0,0.8);
+    font-style: italic;
+  }
+  #shopClose {
+    position: absolute;
+    top: 18px;
+    right: 28px;
+    font-size: 28px;
+    color: #ffe58a;
+    cursor: pointer;
+    background: none;
+    border: none;
+    text-shadow: 0 2px 6px rgba(0,0,0,0.7);
+    transition: filter 0.1s;
+  }
+  #shopClose:hover { filter: brightness(1.4); }
+  #shopTable {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 62%;
+    background: linear-gradient(180deg, #7a4a1a 0%, #5a3208 100%);
+    border-top: 6px solid #3a1e04;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    padding: 20px 16px;
+    box-shadow: 0 -6px 24px rgba(0,0,0,0.5);
+    flex-wrap: wrap;
+  }
+  .shopItem {
+    image-rendering: pixelated;
+    border-radius: 0;
+    font-family: "Press Start 2P", "Courier New", monospace;
+    background: linear-gradient(160deg, #c8922a, #8b5e10);
+    border: 4px solid #5a3a08;
+    width: 130px;
+    min-height: 185px;
+    padding: 12px 8px 10px;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    transition: filter 0.15s, transform 0.1s;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.1);
+    user-select: none;
+    position: relative;
+  }
+  .shopItem:hover { filter: brightness(1.12); transform: translateY(-3px); }
+  .shopItem.selected {
+    background: linear-gradient(160deg, #7a5010, #4a2e06);
+    border-color: #ffe58a;
+    box-shadow: 0 4px 20px rgba(255,220,80,0.4), inset 0 1px 0 rgba(255,255,255,0.08);
+  }
+  .shopItem.owned {
+    background: linear-gradient(160deg, #1a5c1a, #0a3a0a);
+    border-color: #80ff80;
+  }
+  .itemIcon { font-size: 32px; image-rendering: pixelated; }
+  .itemName {
+    font-family: "Press Start 2P", "Courier New", monospace;
+    font-size: 13px;
+    font-weight: bold;
+    color: #ffe8a0;
+    text-align: center;
+    text-shadow: 0 1px 3px rgba(0,0,0,0.7);
+    line-height: 1.2;
+  }
+  .itemCost {
+    font-family: "Press Start 2P", "Courier New", monospace;
+    font-size: 13px;
+    color: #ffe14d;
+    text-shadow: 0 1px 3px rgba(0,0,0,0.6);
+  }
+  .itemDesc {
+    font-family: "Press Start 2P", "Courier New", monospace;
+    font-size: 11px;
+    color: #f0d898;
+    text-align: center;
+    line-height: 1.35;
+    display: none;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.7);
+  }
+  .shopItem.selected .itemDesc { display: block; }
+  .ownedBadge {
+    font-family: "Press Start 2P", "Courier New", monospace;
+    position: absolute;
+    top: 7px;
+    right: 9px;
+    font-size: 11px;
+    color: #80ff80;
+    font-weight: bold;
+    display: none;
+  }
+  .shopItem.owned .ownedBadge { display: block; }
+
+  /* Strong Puffs — compact infinite-buy item */
+  #strongPuffsRow, #swiftStepsRow {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: #3a2004;
+    border: none;
+    box-shadow: 0 -3px 0 0 #ffe58a, 0 3px 0 0 #1a0a00, -3px 0 0 0 #2a1a00, 3px 0 0 0 #2a1a00;
+    padding: 7px 16px;
+    image-rendering: pixelated;
+    cursor: pointer;
+    transition: filter 0.1s;
+    user-select: none;
+  }
+  #strongPuffsRow:hover, #swiftStepsRow:hover { filter: brightness(1.2); }
+  #strongPuffsRow:active, #swiftStepsRow:active { filter: brightness(0.85); }
+  #shopInfiniteRow {
+    position: absolute;
+    bottom: 8px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 16px;
+    align-items: center;
+  }
+  #strongPuffsLabel, #swiftStepsLabel {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 8px;
+    color: #ffe8a0;
+    text-shadow: 1px 1px 0 #3a2000;
+  }
+  #strongPuffsCost, #swiftStepsCost {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 8px;
+    color: #ffe14d;
+    text-shadow: 1px 1px 0 #3a2000;
+  }
+  #strongPuffsCount, #swiftStepsCount {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 7px;
+    color: #aaffaa;
+    text-shadow: 1px 1px 0 #003a00;
+  }
+  #shopMsg2 {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 8px;
+    color: #ff6060;
+    text-shadow: 1px 1px 0 #400;
+    position: absolute;
+    bottom: 44px;
+    left: 50%;
+    transform: translateX(-50%);
+    white-space: nowrap;
+  }
+  canvas {
+    display: block;
+    background: radial-gradient(circle at top, #ffe6ff 0, #7fd4ff 40%, #3550a8 100%);
+  }
+</style>
+</head>
+<body>
+<div id="ui">
+  <span>Move: A/D or ←/→</span>
+  <span>Jump/Hover: W / ↑ / Space</span>
+  <span>Inhale: J</span>
+  <span>Spit Star: K</span>
+  <span>Summon Helper: B</span>
+  <span>Dash: Shift</span>
+  <span>Spawn Fire Pile: G</span>
+  <span>Sword Slash: T</span>
+  <span>Sword Pogo: Y</span>
+  <span id="score">Score: 0</span>
+  <span id="starCoins">⭐ 0 Star Coins</span>
+  <span id="state"></span>
+</div>
+
+<div id="shopWrapper">
+  <div id="ropeContainer">
+    <div class="rope"></div>
+    <div class="rope"></div>
+  </div>
+  <button id="shopBtn">🛒 Shop</button>
+</div>
+
+<div id="shopScreen">
+  <button id="shopClose">✕</button>
+  <div id="shopTitle">⭐ Item Shop ⭐</div>
+  <div id="shopCoins">⭐ 0 Star Coins</div>
+  <div id="shopMsg"></div>
+  <div id="shopTable">
+    <div class="shopItem" data-id="metaThrust">
+      <span class="ownedBadge">✔ OWNED</span>
+      <div class="itemIcon">⚡</div>
+      <div class="itemName">Meta Thrust</div>
+      <div class="itemCost">⭐ 450</div>
+      <div class="itemDesc">Overcharge now triggers by hitting only 6 enemies in one swing.</div>
+    </div>
+    <div class="shopItem" data-id="metaReach">
+      <span class="ownedBadge">✔ OWNED</span>
+      <div class="itemIcon">🗡️</div>
+      <div class="itemName">Meta Reach</div>
+      <div class="itemCost">⭐ 560</div>
+      <div class="itemDesc">Sword size is amplified by 1.5× (base and overcharged).</div>
+    </div>
+    <div class="shopItem" data-id="quickQuas">
+      <span class="ownedBadge">✔ OWNED</span>
+      <div class="itemIcon">💨</div>
+      <div class="itemName">Quick Quas</div>
+      <div class="itemCost">⭐ 800</div>
+      <div class="itemDesc">Kirby moves 1.5× faster and leaves a faint blue trail.</div>
+    </div>
+    <div class="shopItem" data-id="metaJab">
+      <span class="ownedBadge">✔ OWNED</span>
+      <div class="itemIcon">🌀</div>
+      <div class="itemName">Meta Jab</div>
+      <div class="itemCost">⭐ 400</div>
+      <div class="itemDesc">Sword swings 2× faster. Cooldown reduced to 0.3 seconds. Sword damage: 25 → 50.</div>
+    </div>
+    <div class="shopItem" data-id="plasmaProperties">
+      <span class="ownedBadge">✔ OWNED</span>
+      <div class="itemIcon">🔵</div>
+      <div class="itemName">Plasma Properties</div>
+      <div class="itemCost">⭐ 1,200</div>
+      <div class="itemDesc">Every 4.5 seconds, a lightning ball spawns on you (2× duration). Lightning damage buffed: 25 → 35 dps.</div>
+    </div>
+    <div class="shopItem" data-id="hoverHeaven">
+      <span class="ownedBadge">✔ OWNED</span>
+      <div class="itemIcon">🌤️</div>
+      <div class="itemName">Hover Heaven</div>
+      <div class="itemCost">⭐ 260</div>
+      <div class="itemDesc">Flight/hover ascent speed amplified by 1.5×.</div>
+    </div>
+    <div class="shopItem" data-id="metaLinger">
+      <span class="ownedBadge">✔ OWNED</span>
+      <div class="itemIcon">⏳</div>
+      <div class="itemName">Meta Linger</div>
+      <div class="itemCost">⭐ 400</div>
+      <div class="itemDesc">Overcharge lasts 2× as long.</div>
+    </div>
+    <div class="shopItem" data-id="starSeries">
+      <span class="ownedBadge">✔ OWNED</span>
+      <div class="itemIcon">🌟</div>
+      <div class="itemName">Star Series</div>
+      <div class="itemCost">⭐ 1,200</div>
+      <div class="itemDesc">Stars pierce through up to 3 enemies. Spit star damage: 75 → 100.</div>
+    </div>
+    <div class="shopItem" data-id="shadowStep">
+      <span class="ownedBadge">✔ OWNED</span>
+      <div class="itemIcon">👤</div>
+      <div class="itemName">Shadow Step</div>
+      <div class="itemCost">⭐ 500</div>
+      <div class="itemDesc">Dash through enemies dealing 3× star spit damage. Survivors don't hurt you — you phase right through.</div>
+    </div>
+    <div class="shopItem" data-id="pogotopia">
+      <span class="ownedBadge">✔ OWNED</span>
+      <div class="itemIcon">🦘</div>
+      <div class="itemName">Pogotopia</div>
+      <div class="itemCost">⭐ 670</div>
+      <div class="itemDesc">Sword pogo bounce is 25% higher.</div>
+    </div>
+    <div class="shopItem locked" data-id="pogopolis" style="display:none;">
+      <span class="ownedBadge">✔ OWNED</span>
+      <div class="itemIcon">🏙️</div>
+      <div class="itemName">Pogopopolis</div>
+      <div class="itemCost">⭐ 1500</div>
+      <div class="itemDesc">Sword pogo bounce is 50% higher from base.</div>
+    </div>
+    <div class="shopItem" data-id="gourmetFire">
+      <span class="ownedBadge">✔ OWNED</span>
+      <div class="itemIcon">🔥</div>
+      <div class="itemName">Gourmet Fire</div>
+      <div class="itemCost">⭐ 450</div>
+      <div class="itemDesc">All fire piles (including blue) last 50% longer. Normal fire dps: 15 → 30. Blue fire dps: 50 → 80 (via Last Stand).</div>
+    </div>
+    <div class="shopItem" data-id="theMoreTheMerrier">
+      <span class="ownedBadge">✔ OWNED</span>
+      <div class="itemIcon">👥</div>
+      <div class="itemName">The More, the Merrier</div>
+      <div class="itemCost">⭐ 800</div>
+      <div class="itemDesc">V toggles auto-summon helpers. Cooldown halved, helpers last 50% longer.</div>
+    </div>
+    <div class="shopItem" data-id="vortexVariety">
+      <span class="ownedBadge">✔ OWNED</span>
+      <div class="itemIcon">🌀</div>
+      <div class="itemName">Vortex Variety</div>
+      <div class="itemCost">⭐ 750</div>
+      <div class="itemDesc">Inhale range ×1.5. Spit fires 2 stars: one straight, one 45° up. Spit star damage doubled (150 base, 200 with Star Series).</div>
+    </div>
+    <div class="shopItem" data-id="lastStand">
+      <span class="ownedBadge">✔ OWNED</span>
+      <div class="itemIcon">💥</div>
+      <div class="itemName">Last Stand</div>
+      <div class="itemCost">⭐ 400</div>
+      <div class="itemDesc">Fire piles explode when lifespan ends. Blue fire explodes 50% bigger. Blue fire dps: 50 → 80.</div>
+    </div>
+  </div>
+  <div id="shopMsg2"></div>
+  <div id="shopInfiniteRow">
+    <div id="strongPuffsRow">
+      <span>💪</span>
+      <span id="strongPuffsLabel">Strong Puffs</span>
+      <span id="strongPuffsCost">⭐ 10</span>
+      <span id="strongPuffsCount">×0 owned (+3% dmg each)</span>
+    </div>
+    <div id="swiftStepsRow">
+      <span>👟</span>
+      <span id="swiftStepsLabel">Swift Step</span>
+      <span id="swiftStepsCost">⭐ 50</span>
+      <span id="swiftStepsCount">×0 owned (+2% spd each)</span>
+    </div>
+  </div>
+</div>
+
+<canvas id="game"></canvas>
+<script>
+(() => {
+  const canvas = document.getElementById("game");
+  const ctx = canvas.getContext("2d");
+
+  // ── Star Coins & Upgrades ──────────────────────────────────────
+  let starCoins = 0;
+  const starCoinEl = document.getElementById("starCoins");
+  const shopCoinsEl = document.getElementById("shopCoins");
+
+  const UPGRADE_COSTS = {
+    metaThrust: 450, metaReach: 560, quickQuas: 800,
+    metaJab: 400, plasmaProperties: 1200, hoverHeaven: 260,
+    metaLinger: 400, starSeries: 1200, shadowStep: 500,
+    pogotopia: 670, pogopolis: 1500,
+    gourmetFire: 450, theMoreTheMerrier: 800, vortexVariety: 750,
+    lastStand: 400
+  };
+  const upgrades = {
+    metaThrust: false, metaReach: false, quickQuas: false,
+    metaJab: false, plasmaProperties: false, hoverHeaven: false,
+    metaLinger: false, starSeries: false, shadowStep: false,
+    pogotopia: false, pogopolis: false,
+    gourmetFire: false, theMoreTheMerrier: false, vortexVariety: false,
+    lastStand: false
+  };
+
+  // ── Damage & Health System ─────────────────────────────────────
+  let diffScaling = 1;        // multiplies every 3 frames (≈20fps tick)
+  let diffScalingFrameCount = 0;
+  const DIFF_INC_PER_20FPS = 0.001;
+
+  function strongPuffMult() { return 1 + strongPuffsCount * 0.03; }
+
+  // Base HP by type
+  function baseMaxHp(e) {
+    if (sirKibbles.includes(e)) return 100;
+    if (flyers.includes(e)) return 25;
+    return 50; // ground enemies
+  }
+
+  function initEnemyHp(e) {
+    const base = baseMaxHp(e);
+    const scaled = Math.round(base * diffScaling * 10) / 10;
+    e.maxHp = scaled;
+    e.hp = scaled;
+    e.hpBarTimer = 0; // frames to show hp bar (refreshed on hit)
+  }
+
+  function dealDamage(e, amount) {
+    if (!e.alive || !e.maxHp) return;
+    const dmg = Math.round(amount * strongPuffMult() * 10) / 10;
+    e.hp = Math.max(0, Math.round((e.hp - dmg) * 10) / 10);
+    e.hpBarTimer = 180; // show bar for 3s
+    // Popcorn damage text
+    damageNumbers.push({
+      x: e.x + (Math.random() - 0.5) * 20,
+      y: e.y - e.r - 8,
+      val: dmg,
+      life: 52,
+      maxLife: 52,
+      vy: -1.4 - Math.random() * 0.8
+    });
+    if (e.hp <= 0) killEnemyByDamage(e);
+  }
+
+  function killEnemyByDamage(e) {
+    if (!e.alive) return;
+    e.alive = false;
+    // Give appropriate coins & score
+    let coins = 5, sc = 100;
+    if (sirKibbles.includes(e)) { coins = 20; sc = 220; }
+    else if (flyers.includes(e)) { coins = 10; sc = 120; }
+    addStarCoins(coins);
+    score += sc;
+    scoreEl.textContent = "Score: " + score;
+    spawnStarPoof(e.x, e.y, e.r);
+  }
+
+  const damageNumbers = [];
+
+  // Strong Puffs
+  let strongPuffsCount = 0;
+  let strongPuffsCost = 10;
+  const strongPuffsCountEl = document.getElementById("strongPuffsCount");
+  const strongPuffsCostEl  = document.getElementById("strongPuffsCost");
+  const shopMsg2El = document.getElementById("shopMsg2");
+  document.getElementById("strongPuffsRow").addEventListener("click", () => {
+    if (starCoins < strongPuffsCost) {
+      shopMsg2El.textContent = "Not enough Star Coins!";
+      setTimeout(() => { shopMsg2El.textContent = ""; }, 1500);
+      return;
+    }
+    addStarCoins(-strongPuffsCost);
+    strongPuffsCount++;
+    strongPuffsCost = Math.round(strongPuffsCost * 1.1);
+    strongPuffsCountEl.textContent = `×${strongPuffsCount} owned (+${strongPuffsCount * 3}% dmg)`;
+    strongPuffsCostEl.textContent  = `⭐ ${strongPuffsCost}`;
+    shopMsg2El.textContent = "";
+  });
+
+  function addStarCoins(n) {
+    starCoins += n;
+    if (starCoins < 0) starCoins = 0;
+    starCoinEl.textContent = `⭐ ${starCoins} Star Coins`;
+    shopCoinsEl.textContent = `⭐ ${starCoins} Star Coins`;
+  }
+
+  function getEnemyType(e) {
+    if (sirKibbles.includes(e) || e.burnType === "kibble") return "sirKibble";
+    if (flyers.includes(e)) return "flyer";
+    return "ground";
+  }
+
+  function contactCoinLoss(e) {
+    const type = getEnemyType(e);
+    if (type === "flyer") return 100;
+    return 50;
+  }
+
+  function enemyKillReward(e) {
+    const type = getEnemyType(e);
+    if (type === "sirKibble") return { score: 220, coins: 20 };
+    if (type === "flyer") return { score: 200, coins: 10 };
+    return { score: 150, coins: 5 };
+  }
+
+  function damagePlayer(loss, sourceX, invulnFrames = 50) {
+    addStarCoins(-loss);
+    player.invuln = invulnFrames;
+    const dir = Math.sign(player.x - sourceX) || -player.facing || 1;
+    player.vx = dir * 5;
+    player.vy = -6;
+  }
+
+  function damagePlayerFromEnemy(e, invulnFrames = 50) {
+    damagePlayer(contactCoinLoss(e), e.x, invulnFrames);
+  }
+
+  function dashPathHitsEnemy(e, startX, endX, dashY) {
+    if (!e.alive) return false;
+    const minX = Math.min(startX, endX) - player.r;
+    const maxX = Math.max(startX, endX) + player.r;
+    if (e.x + e.r < minX || e.x - e.r > maxX) return false;
+    const closestX = Math.max(Math.min(e.x, Math.max(startX, endX)), Math.min(startX, endX));
+    const dx = e.x - closestX;
+    const dy = e.y - dashY;
+    return Math.hypot(dx, dy) < e.r + player.r - 2;
+  }
+
+  function killEnemyFromShadowStep(e) {
+    if (!e.alive) return;
+    // 3× star spit damage — stacks with Strong Puffs via dealDamage
+    const starDmg = (upgrades.starSeries ? 100 : 75) * (upgrades.vortexVariety ? 2 : 1);
+    const shadowDmg = starDmg * 3;
+    dealDamage(e, shadowDmg);
+    // Always spawn a poof on contact for visual feedback
+    spawnStarPoof(e.x, e.y, e.r * 0.9);
+  }
+
+  function getOverchargeThreshold() { return upgrades.metaThrust ? 6 : 10; }
+  function getOverchargeDuration() { return upgrades.metaLinger ? OVERCHARGE_DURATION_FRAMES * 2 : OVERCHARGE_DURATION_FRAMES; }
+  function getSwingFrames() { return upgrades.metaJab ? 8 : 15; }
+  function getSwordCooldown() {
+    const base = upgrades.metaJab ? 18 : 30;
+    return isSwordOvercharged() ? Math.max(1, Math.floor(base / 2)) : base;
+  }
+
+  // Plasma Properties: auto lightning ball timer
+  let plasmaTimer = 0;
+  const PLASMA_INTERVAL = 270; // 4.5s * 60fps
+
+  // Quick Quas trail
+  const quasTrail = [];
+
+  // ── Shop UI ────────────────────────────────────────────────────
+  let shopOpen = false;
+  let selectedItem = null;
+  const shopScreen = document.getElementById("shopScreen");
+  const shopWrapper = document.getElementById("shopWrapper");
+  const shopBtn = document.getElementById("shopBtn");
+  const shopClose = document.getElementById("shopClose");
+  const shopMsg = document.getElementById("shopMsg");
+
+  function openShop() {
+    if (shopOpen) return;
+    shopOpen = true;
+    shopMsg.textContent = "";
+    selectedItem = null;
+    applyUpgrades();
+    document.querySelectorAll(".shopItem").forEach(el => el.classList.remove("selected"));
+
+    shopWrapper.classList.add("pulledUp");
+    setTimeout(() => {
+      if (shopOpen) shopScreen.classList.add("open");
+    }, 260);
+  }
+
+  function closeShop() {
+    if (!shopOpen) return;
+    shopOpen = false;
+    shopScreen.classList.remove("open");
+    setTimeout(() => {
+      if (!shopOpen) shopWrapper.classList.remove("pulledUp");
+    }, 260);
+  }
+
+  shopBtn.addEventListener("click", openShop);
+  shopClose.addEventListener("click", closeShop);
+
+  document.querySelectorAll(".shopItem").forEach(el => {
+    el.addEventListener("click", () => {
+      const id = el.dataset.id;
+      if (upgrades[id]) { shopMsg.textContent = "You already own this!"; return; }
+      if (selectedItem === id) {
+        // Second click = purchase
+        const cost = UPGRADE_COSTS[id];
+        if (starCoins < cost) {
+          shopMsg.textContent = "You cannot afford this item.";
+          return;
+        }
+        addStarCoins(-cost);
+        upgrades[id] = true;
+        el.classList.add("owned");
+        el.classList.remove("selected");
+        selectedItem = null;
+        shopMsg.textContent = "✔ Purchased! (+3 Strong Puffs bonus!)";
+        grantFreeStrongPuffs(3);
+        applyUpgrades();
+      } else {
+        // First click = select
+        document.querySelectorAll(".shopItem").forEach(e => e.classList.remove("selected"));
+        el.classList.add("selected");
+        selectedItem = id;
+        shopMsg.textContent = "";
+      }
+    });
+  });
+
+  function grantFreeStrongPuffs(n) {
+    for (let i = 0; i < n; i++) {
+      strongPuffsCount++;
+      strongPuffsCost = Math.round(strongPuffsCost * 1.1);
+    }
+    strongPuffsCountEl.textContent = `×${strongPuffsCount} owned (+${strongPuffsCount * 3}% dmg)`;
+    strongPuffsCostEl.textContent  = `⭐ ${strongPuffsCost}`;
+  }
+
+  // Swift Step — infinite speed upgrade
+  let swiftStepsCount = 0;
+  let swiftStepsCost  = 50;
+  const swiftStepsCountEl = document.getElementById("swiftStepsCount");
+  const swiftStepsCostEl  = document.getElementById("swiftStepsCost");
+
+  function swiftSpeedMult() { return 1 + swiftStepsCount * 0.02; }
+
+  document.getElementById("swiftStepsRow").addEventListener("click", () => {
+    if (starCoins < swiftStepsCost) {
+      shopMsg2El.textContent = "Not enough Star Coins!";
+      setTimeout(() => { shopMsg2El.textContent = ""; }, 1500);
+      return;
+    }
+    addStarCoins(-swiftStepsCost);
+    swiftStepsCount++;
+    swiftStepsCost = Math.round(swiftStepsCost * 1.05);
+    swiftStepsCountEl.textContent = `×${swiftStepsCount} owned (+${swiftStepsCount * 2}% spd)`;
+    swiftStepsCostEl.textContent  = `⭐ ${swiftStepsCost}`;
+    shopMsg2El.textContent = "";
+  });
+
+  function applyUpgrades() {
+    // Called whenever upgrades change to sync any immediate effects
+    // (individual effects are read inline during update/draw)
+    const pogopolisEl = document.querySelector('.shopItem[data-id="pogopolis"]');
+    if (pogopolisEl) {
+      pogopolisEl.style.display = upgrades.pogotopia ? "" : "none";
+    }
+  }
+
+  function getPogoBoostMultiplier() {
+    if (upgrades.pogopolis) return 1.5;   // 50% higher than base pogo
+    if (upgrades.pogotopia) return 1.25;  // 25% higher than base pogo
+    return 1;
+  }
+  const scoreEl = document.getElementById("score");
+  const stateEl = document.getElementById("state");
+
+  function resize() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+  }
+  window.addEventListener("resize", resize);
+  resize();
+
+  const keys = {};
+  window.addEventListener("keydown", e => {
+    const k = e.key.toLowerCase();
+    keys[k] = true;
+    if (k === "s") {
+      addStarCoins(100);
+    }
+    if ([" ", "arrowup"].includes(e.key.toLowerCase())) e.preventDefault();
+  });
+  window.addEventListener("keyup", e => {
+    keys[e.key.toLowerCase()] = false;
+  });
+
+  const gravity = 0.35;
+  const groundY = () => canvas.height - 90;
+
+  const player = {
+    x: 180,
+    y: 0,
+    vx: 0,
+    vy: 0,
+    r: 26,
+    onGround: false,
+    hover: false,
+    facing: 1,
+    inhale: false,
+    inhaleRadius: 140,
+    hasEnemy: false,
+    invuln: 0
+  };
+
+  const enemies = [];
+  const flyers = [];
+  const sirKibbles = [];
+  const boomerangs = [];
+  const stars = [];
+  const starTrails = [];
+  const starExplosions = [];
+  const helpers = [];
+  let nextHelperId = 1;
+  const fireParticles = [];
+  const specialFireballs = [];
+  const helperFireballs = [];
+  const helperExplosions = [];
+  const helperDeathBlasts = [];
+  let nextHelperBlastId = 1;
+  const specialExplosions = [];
+  const firePoofs = [];
+  const firePiles = [];
+  const charPiles = [];
+  const bluePileExplosions = [];
+  const lastStandExplosions = [];
+  const inhaleSwirls = [];
+
+  let enemyTimer = 0;
+  let flyerTimer = 0;
+  let sirKibbleTimer = 0;
+  let helperCooldown = 0;
+  let score = 0;
+  let difficulty = 1;
+  const specialChance = 0.005;
+
+  const BASE_BURN_WADDLE = 30;
+  const BASE_BURN_KIBBLE = 60;
+
+  const FIRE_PILE_CHANCE = 0.10;
+  const YELLOW_FIRE_PILE_CHANCE = 0.25;
+  const BLUE_FIRE_PILE_CHANCE = 0.01;
+  const BLUE_FIRE_PILE_CHANCE_YELLOW = 0.025;
+  const FIRE_PILE_SLOW_MULT = 0.7;
+  const FIRE_PILE_BURN_MULT = 4;       // 2x longer than before
+  const BLUE_FIRE_SLOW_MULT = 0.4;     // 60% slower
+  const BLUE_FIRE_BURN_MULT = 2;       // same speed as old normal fire
+
+  let dashCooldown = 0;
+  const DASH_COOLDOWN_FRAMES = 18;
+  let prevShift = false;
+  const dashTrail = [];
+
+  let yellowHelperPresent = false;
+  let prevP = false;
+  let prevG = false;
+  let prevF = false;
+  let prevT = false;
+  let prevY = false;
+  let prevZ = false;
+  let prevN = false;
+  let prevM = false;
+  let prevU = false;
+  let prevV = false;
+  let prevC = false;
+  let autoHelperActive = false;
+  let autoHelperTimer = 0;
+  let prevR = false;
+
+  const SWORD_SWING_FRAMES = 15;
+  const SWORD_COOLDOWN_FRAMES = 30; // 0.5 seconds at 60fps
+  let swordCooldown = 0;
+
+  const sword = {
+    active: false,
+    type: "side",   // "side" or "pogo"
+    timer: 0,
+    facing: 1,      // facing locked at swing start
+    // Each frame during swing we push blade snapshot: array of {x,y} points along blade
+    trailSlices: [], // [{points:[{x,y},...], life, maxLife}]
+    hitEnemies: new Set(),
+    parried: new Set(),
+    spawnedShockwave: false,
+    overchargeTriggeredThisSwing: false
+  };
+
+  const swordKillExplosions = [];
+  const swordShocks = []; // delayed overcharge aftershocks
+  const lightningBalls = [];
+  const lightningBursts = [];
+  const shockwaves = [];
+
+  const OVERCHARGE_DURATION_FRAMES = 180;
+  let swordOverchargeTimer = 0;
+  let permanentOvercharge = false;
+
+  function isSwordOvercharged() {
+    return permanentOvercharge || swordOverchargeTimer > 0;
+  }
+
+  function getSwordCooldownFrames() {
+    return isSwordOvercharged() ? Math.max(1, Math.floor(SWORD_COOLDOWN_FRAMES / 2)) : SWORD_COOLDOWN_FRAMES;
+  }
+
+  function ensureElectricState(e) {
+    if (e.electrified === undefined) {
+      e.electrified = false;
+      e.electrifyTimer = 0;
+    }
+  }
+
+  function spawnLightningBurst(x, y, r = 34) {
+    lightningBursts.push({
+      x, y, r,
+      life: 18,
+      maxLife: 18,
+      bolts: Array.from({ length: 6 }, () => ({
+        angle: Math.random() * Math.PI * 2,
+        len: r * (0.6 + Math.random() * 0.7),
+        kink: 0.35 + Math.random() * 0.35
+      }))
+    });
+  }
+
+  function spawnLightningBall(x, y, radius = 34, duration = 180) {
+    lightningBalls.push({
+      x, y,
+      r: radius,
+      life: duration,
+      maxLife: duration,
+      hit: new Set(),
+      pulse: Math.random() * Math.PI * 2
+    });
+    spawnLightningBurst(x, y, radius * 0.9);
+  }
+
+  function electrifyEnemy(e, spawnBall = false) {
+    ensureElectricState(e);
+    const wasElectrified = e.electrified;
+    if (!wasElectrified) {
+      e.electrified = true;
+      e.electrifyTimer = 120;
+    }
+    if (spawnBall && !wasElectrified) spawnLightningBall(e.x, e.y, e.r * 1.55, 180);
+  }
+
+  function maybeSwordProcLightning(e) {
+    if (!isSwordOvercharged()) return;
+    if (Math.random() < 0.10) {
+      electrifyEnemy(e, true);
+    }
+  }
+
+  function electricKillScore(e) {
+    if (sirKibbles.includes(e) || e.burnType === "kibble") return 360;
+    if (flyers.includes(e)) return 240;
+    return 200;
+  }
+
+  function killElectrifiedEnemy(e) {
+    if (!e.alive) return;
+    e.alive = false;
+    spawnLightningBurst(e.x, e.y, e.r * 1.3);
+    score += electricKillScore(e);
+    scoreEl.textContent = "Score: " + score;
+    if (sirKibbles.includes(e) || e.burnType === "kibble") addStarCoins(20);
+    else if (flyers.includes(e)) addStarCoins(10);
+    else addStarCoins(5);
+  }
+
+  function spawnSwordShockwave(facing) {
+    shockwaves.push({
+      x: player.x,
+      y: player.y,
+      vx: facing * 18,
+      r: 34,
+      life: Math.ceil(canvas.width / 18) + 18,
+      maxLife: Math.ceil(canvas.width / 18) + 18,
+      hit: new Set()
+    });
+  }
+
+  function makeGroundEnemy(side, y, vx, r, burnType) {
+    return {
+      x: side, y, vx, vy: 0, r,
+      alive: true, burning: false,
+      burnTimer: 0, burnStacks: 0,
+      burnType, burnSource: null,
+      burnFromYellow: false, deathPoofDone: false,
+      electrified: false, electrifyTimer: 0,
+      burnDmgAccum: 0, electDmgAccum: 0,
+      hp: 0, maxHp: 0, hpBarTimer: 0
+    };
+  }
+
+  function spawnEnemy() {
+    const side = Math.random() < 0.5 ? -60 : canvas.width + 60;
+    const y = groundY() - 40 - Math.random() * 80;
+    const e = makeGroundEnemy(
+      side, y,
+      side < 0 ? 1.2 + Math.random() * 1.2 : -1.2 - Math.random() * 1.2,
+      22, "waddle"
+    );
+    enemies.push(e);
+    initEnemyHp(e);
+  }
+
+  function spawnFlyer() {
+    const side = Math.random() < 0.5 ? -80 : canvas.width + 80;
+    const y = 120 + Math.random() * 200;
+    const f = {
+      x: side, y, baseY: y,
+      vx: side < 0 ? 2.2 : -2.2,
+      r: 20, t: 0, alive: true,
+      burning: false, burnTimer: 0, burnStacks: 0,
+      burnType: "waddle", burnSource: null,
+      burnFromYellow: false, deathPoofDone: false,
+      electrified: false, electrifyTimer: 0
+    };
+    flyers.push(f);
+    initEnemyHp(f);
+  }
+
+  function spawnSirKibble() {
+    const side = Math.random() < 0.5 ? -60 : canvas.width + 60;
+    const dir = side < 0 ? 1 : -1;
+    const sk = makeGroundEnemy(side, groundY() - 40, 1.4 * dir, 24, "kibble");
+    sk.state = "move"; sk.stateTimer = 0;
+    sk.throwCooldown = 180 + Math.random() * 60;
+    sk.hasBoomerang = true; sk.facing = dir;
+    sk.jumpCooldown = 90 + Math.random() * 120;
+    sirKibbles.push(sk);
+    initEnemyHp(sk);
+  }
+
+  function resetPlayer() {
+    player.x = 180;
+    player.y = 0;
+    player.vx = 0;
+    player.vy = 0;
+    player.onGround = false;
+    player.hover = false;
+    player.inhale = false;
+    player.hasEnemy = false;
+    player.invuln = 40;
+  }
+  resetPlayer();
+
+  function spawnHelper(isSpecial, isYellow = false) {
+    const baseLife = upgrades.theMoreTheMerrier ? 1800 : 1200;
+    helpers.push({
+      id: nextHelperId++,
+      x: player.x,
+      y: player.y,
+      vx: 0,
+      vy: 0,
+      r: isSpecial ? 28 : 18,
+      life: (isSpecial || isYellow) ? Infinity : baseLife,
+      target: null,
+      dead: false,
+      special: isSpecial,
+      yellow: isYellow,
+      spikes: isSpecial ? 3 : 0,
+      fireTimer: 0,
+      trail: [],
+      fireChanceTimer: 0,
+      invuln: 0
+    });
+  }
+
+  function spawnStarPoof(x, y, r) {
+    starExplosions.push({
+      x, y, r,
+      life: 30,
+      maxLife: 30,
+      particles: Array.from({ length: 8 }, (_, i) => ({
+        angle: (i / 8) * Math.PI * 2 + Math.random() * 0.4,
+        speed: 1.5 + Math.random() * 2.5,
+        r: r * (0.3 + Math.random() * 0.4),
+        life: 30,
+        maxLife: 30
+      }))
+    });
+  }
+
+  function spawnSpecialExplosion(x, y) {
+    const radius = Math.min(canvas.width, canvas.height) * 0.2;
+    specialExplosions.push({
+      x,
+      y,
+      life: 40,
+      maxLife: 40,
+      radius,
+      particles: Array.from({ length: 40 }, () => ({
+        angle: Math.random() * Math.PI * 2,
+        speed: 1 + Math.random() * 3,
+        life: 40,
+        maxLife: 40
+      }))
+    });
+  }
+
+  function spawnLastStandExplosion(x, y, blue = false) {
+    const baseR = blue ? 54 : 36; // blue is 50% bigger
+    lastStandExplosions.push({
+      x, y,
+      blue,
+      r: baseR,
+      life: 28,
+      maxLife: 28,
+      hitEnemies: new Set(),
+      // Burst particles
+      particles: Array.from({ length: 14 }, () => ({
+        angle: Math.random() * Math.PI * 2,
+        speed: 1.8 + Math.random() * 3.2,
+        r: 4 + Math.random() * 8,
+        life: 28,
+        maxLife: 28
+      })),
+      // Expanding ring
+      ringR: 0
+    });
+  }
+
+  function spawnFirePoof(x, y, r = 18, blue = false) {
+    firePoofs.push({
+      x, y, r,
+      blue,
+      life: 24,
+      maxLife: 24,
+      particles: Array.from({ length: 16 }, () => ({
+        angle: Math.random() * Math.PI * 2,
+        speed: 1.2 + Math.random() * 2.8,
+        r: r * (0.18 + Math.random() * 0.22),
+        life: 24,
+        maxLife: 24
+      }))
+    });
+  }
+
+  function spawnHelperDeathBlast(x, y, sourceYellow = false, special = false) {
+    const radius = special ? 58 : (sourceYellow ? 48 : 40);
+    helperDeathBlasts.push({
+      id: "blast" + (nextHelperBlastId++),
+      x, y,
+      r: radius,
+      life: 26,
+      maxLife: 26,
+      sourceYellow: !!sourceYellow,
+      special: !!special,
+      hitEnemies: new Set(),
+      sparks: Array.from({ length: special ? 14 : 10 }, (_, i) => {
+        const angle = (i / (special ? 22 : 16)) * Math.PI * 2 + (Math.random() - 0.5) * 0.35;
+        const speed = 1.4 + Math.random() * (special ? 3.1 : 2.2);
+        return {
+          x, y,
+          vx: Math.cos(angle) * speed,
+          vy: Math.sin(angle) * speed - 0.7,
+          r: (special ? 4 : 3) + Math.random() * 4,
+          life: 20 + Math.floor(Math.random() * 9),
+          maxLife: 28
+        };
+      })
+    });
+  }
+
+  function killHelper(h, explode = true) {
+    if (!h || h.dead) return;
+    h.dead = true;
+    if (h.yellow) yellowHelperPresent = false;
+    if (explode) spawnHelperDeathBlast(h.x, h.y, !!h.yellow, !!h.special);
+  }
+
+  function spawnCharPile(x, y, sourceYellow, blue = false) {
+    const charMult = upgrades.gourmetFire ? 2.5 : 1.5;
+    const charFadeFrames = Math.round((blue ? 360 : (sourceYellow ? 180 : 150)) * charMult);
+    const charHoldFrames = Math.round(180 * charMult);
+    charPiles.push({
+      x, y,
+      r: (blue ? 20 : (sourceYellow ? 20 : 17)) * 1.6,
+      holdLife: charHoldFrames,
+      fadeLife: charFadeFrames,
+      maxFadeLife: charFadeFrames,
+      blue: !!blue,
+      points: Array.from({ length: 11 }, (_, i) => ({
+        angle: (i / 11) * Math.PI * 2,
+        rx: 0.7 + Math.random() * 0.6,
+        ry: 0.35 + Math.random() * 0.3
+      })),
+      dead: false
+    });
+  }
+
+  function spawnFirePile(x, y, sourceYellow) {
+    const airborne = y < groundY() - 6;
+    const fireMult = upgrades.gourmetFire ? 1.5 : 1.0;
+    const baseLife = sourceYellow ? 420 : 300;
+    const pile = {
+      x, y,
+      vx: (Math.random() - 0.5) * 1.2,
+      vy: airborne ? (-1.5 - Math.random() * 1.2) : 0,
+      r: sourceYellow ? 20 : 17,
+      life: Math.round(baseLife * fireMult),
+      maxLife: Math.round(baseLife * fireMult),
+      onGround: !airborne,
+      sourceYellow: !!sourceYellow,
+      blue: false,
+      dead: false,
+      consumed: false,
+      hitsLeft: 1,
+      hitEnemies: new Set(),
+      charSpawned: !airborne
+    };
+    firePiles.push(pile);
+    if (!airborne) spawnCharPile(x, y, sourceYellow, false);
+  }
+
+  function spawnBluePile(x, y) {
+    const airborne = y < groundY() - 6;
+    const fireMult = upgrades.gourmetFire ? 1.5 : 1.0;
+    const baseLife = 900;
+    const pile = {
+      x, y,
+      vx: (Math.random() - 0.5) * 1.2,
+      vy: airborne ? (-1.5 - Math.random() * 1.2) : 0,
+      r: 20,
+      life: Math.round(baseLife * fireMult),
+      maxLife: Math.round(baseLife * fireMult),
+      onGround: !airborne,
+      sourceYellow: false,
+      blue: true,
+      dead: false,
+      consumed: false,
+      hitsLeft: 3,
+      hitEnemies: new Set(),
+      charSpawned: !airborne
+    };
+    firePiles.push(pile);
+    if (!airborne) spawnCharPile(x, y, false, true);
+  }
+
+  function bluePopBurst(x, y) {
+    bluePileExplosions.push({
+      x, y,
+      life: 40, maxLife: 40,
+      ring: { r: 0, maxR: 90 },
+      sparks: Array.from({ length: 18 }, (_, i) => {
+        const angle = (i / 18) * Math.PI * 2;
+        return { x, y, vx: Math.cos(angle) * (2.5 + Math.random() * 2), vy: Math.sin(angle) * (2.5 + Math.random() * 2) - 1.5, life: 28 + Math.floor(Math.random() * 10), maxLife: 38, r: 3 + Math.random() * 3 };
+      }),
+      poppers: [
+        { x, y, vx: -5.0, vy: -6.5, life: 22, maxLife: 22, side: -1, spawned: false },
+        { x, y, vx:  5.0, vy: -6.5, life: 22, maxLife: 22, side:  1, spawned: false }
+      ]
+    });
+  }
+
+  function maybeSpawnFirePileOnDeath(e) {
+    if (e.burnSource !== "helper") return;
+    const blueRoll = Math.random();
+    const blueChance = e.burnFromYellow ? BLUE_FIRE_PILE_CHANCE_YELLOW : BLUE_FIRE_PILE_CHANCE;
+    if (blueRoll < blueChance) { spawnBluePile(e.x, e.y); return; }
+    const chance = e.burnFromYellow ? YELLOW_FIRE_PILE_CHANCE : FIRE_PILE_CHANCE;
+    if (Math.random() < chance) spawnFirePile(e.x, e.y, e.burnFromYellow);
+  }
+
+  function killBurningEnemy(e) {
+    if (!e.alive) return;
+    e.alive = false;
+    if (!e.deathPoofDone) {
+      e.deathPoofDone = true;
+      spawnFirePoof(e.x, e.y, e.r * 0.95, !!e.burnFromBlue);
+      maybeSpawnFirePileOnDeath(e);
+      if (sirKibbles.includes(e) || e.burnType === "kibble") addStarCoins(20);
+      else if (flyers.includes(e)) addStarCoins(10);
+      else addStarCoins(5);
+    }
+  }
+
+  function applyBurnFromHelper(e, sourceYellow, sourceId = null) {
+    let helperBurnFrames = 30; // TRUE 0.5 seconds at 60fps from the first helper hit
+
+    if (upgrades && upgrades.theMoreTheMerrier) {
+      helperBurnFrames = helperBurnFrames / 1.5; // 50% faster with the shop item
+    }
+
+    if (!e.burning || e.burnSource !== "helper") {
+      e.burning = true;
+      e.burnStacks = 0;
+      e.helperBurnSources = new Set();
+      e.burnTimer = Infinity;
+    }
+
+    if (!e.helperBurnSources) e.helperBurnSources = new Set();
+
+    let addedNewSource = false;
+    if (sourceId !== null && sourceId !== undefined) {
+      if (!e.helperBurnSources.has(sourceId)) {
+        e.helperBurnSources.add(sourceId);
+        addedNewSource = true;
+      }
+      e.burnStacks = e.helperBurnSources.size;
+    } else {
+      e.burnStacks++;
+      addedNewSource = true;
+    }
+
+    const stacks = Math.max(1, e.burnStacks || 1);
+    const targetTimer = Math.max(1, helperBurnFrames / Math.pow(2, stacks - 1));
+
+    // Important: repeated fire from the SAME helper must not keep resetting the timer upward.
+    // New helper sources can speed it up, but one helper's flame stream burns down normally.
+    if (addedNewSource || !isFinite(e.burnTimer)) {
+      e.burnTimer = Math.min(e.burnTimer, targetTimer);
+    } else {
+      e.burnTimer = Math.min(e.burnTimer, targetTimer);
+    }
+
+    e.burnSource = "helper";
+    e.burnFromYellow = !!sourceYellow;
+  }
+
+  function applyBurnFromPile(e, blue = false) {
+    const base = e.burnType === "kibble" ? BASE_BURN_KIBBLE : BASE_BURN_WADDLE;
+    const slowMult = blue ? BLUE_FIRE_SLOW_MULT : FIRE_PILE_SLOW_MULT;
+    const burnMult = blue ? BLUE_FIRE_BURN_MULT : FIRE_PILE_BURN_MULT;
+    e.vx *= slowMult;
+    if (!e.burning || e.burnSource !== "pile") {
+      e.burning = true;
+      e.burnStacks = 1;
+      e.burnTimer = base * burnMult;
+    } else {
+      e.burnStacks++;
+      e.burnTimer = (base / e.burnStacks) * burnMult;
+    }
+    e.burnSource = "pile";
+    e.burnFromYellow = false;
+    e.burnFromBlue = !!blue;
+  }
+
+  // Returns the world-space angle of the blade at progress [0..1] for a given swing type+facing
+  function swordBladeAngle(type, facing, progress) {
+    if (type === "side") {
+      // -45° to +45° relative to facing direction
+      const start = facing >= 0 ? -Math.PI / 4 : Math.PI + Math.PI / 4;
+      const end   = facing >= 0 ?  Math.PI / 4 : Math.PI - Math.PI / 4;
+      return start + (end - start) * progress;
+    } else {
+      // pogo: sweep through straight-down (PI/2)
+      // facing right → PI/4 to 3PI/4 (left-to-right through down)
+      // facing left  → 3PI/4 to PI/4 (right-to-left through down)
+      const start = facing >= 0 ? Math.PI / 4 : Math.PI * 3 / 4;
+      const end   = facing >= 0 ? Math.PI * 3 / 4 : Math.PI / 4;
+      return start + (end - start) * progress;
+    }
+  }
+
+  function spawnBoomerang(owner) {
+    const dir = owner.facing || 1;
+    const speed = 6;
+    boomerangs.push({
+      x: owner.x + dir * (owner.r + 10),
+      y: owner.y - 6,
+      vx: dir * speed,
+      vy: -1,
+      phase: "out",
+      timer: 60 + Math.random() * 30,
+      owner,
+      caught: false,
+      angle: 0,
+      trail: []
+    });
+  }
+
+
+  function spawnManualShockwave() {
+    const dir = player.facing || 1;
+    const totalLife = Math.ceil(canvas.width / 18) + 18;
+    shockwaves.push({
+      x: player.x,
+      y: player.y,
+      vx: dir * 18,
+      vy: 0,
+      r: 34,
+      life: totalLife,
+      maxLife: totalLife,
+      hit: new Set()
+    });
+  }
+
+  function update() {
+    const w = canvas.width;
+    const h = canvas.height;
+
+    const rHeld = !!keys["r"];
+    if (rHeld && !prevR) {
+      if (shopOpen) closeShop();
+      else openShop();
+    }
+    prevR = rHeld;
+
+    difficulty += 0.0005;
+    difficulty = Math.min(difficulty, 6);
+
+    let move = 0;
+    if (keys["a"] || keys["arrowleft"]) move -= 1;
+    if (keys["d"] || keys["arrowright"]) move += 1;
+    if (move !== 0) player.facing = move;
+
+    const speedMult = swiftSpeedMult();
+    const baseSpeed = (upgrades.quickQuas ? 6.0 : 3.2) * speedMult;
+    player.vx += move * (upgrades.quickQuas ? 0.9 : 0.6) * speedMult;
+    player.vx *= 0.82;
+    if (Math.abs(player.vx) > baseSpeed) {
+      player.vx = baseSpeed * Math.sign(player.vx);
+    }
+
+    const jumpPressed = keys["w"] || keys["arrowup"] || keys[" "];
+
+    if (jumpPressed) {
+      if (player.onGround) {
+        player.vy = -7.5;
+        player.onGround = false;
+        player.hover = true;
+      } else {
+        player.hover = true;
+        if (player.vy > -2) player.vy -= upgrades.hoverHeaven ? 0.45 : 0.18;
+        if (player.vy > 2) player.vy *= 0.7;
+      }
+    } else {
+      player.hover = false;
+    }
+
+    const inhalePressed = keys["j"];
+    const spitPressed = keys["k"];
+
+    if (inhalePressed && !player.hasEnemy) {
+      player.inhale = true;
+    } else {
+      player.inhale = false;
+    }
+
+    if (spitPressed && player.hasEnemy) {
+      const dir = player.facing || 1;
+      stars.push({
+        x: player.x + dir * (player.r + 8),
+        y: player.y,
+        vx: dir * 9,
+        vy: 0,
+        r: 22,
+        angle: 0,
+        trail: [],
+        pierceLeft: upgrades.starSeries ? 2 : 0
+      });
+      // Vortex Variety: second star at 45 degrees upward
+      if (upgrades.vortexVariety) {
+        const speed = 9;
+        const upAngle = dir >= 0 ? -Math.PI / 4 : -Math.PI * 3 / 4;
+        stars.push({
+          x: player.x + dir * (player.r + 8),
+          y: player.y,
+          vx: Math.cos(upAngle) * speed,
+          vy: Math.sin(upAngle) * speed,
+          r: 22,
+          angle: 0,
+          trail: [],
+          pierceLeft: upgrades.starSeries ? 2 : 0
+        });
+      }
+      player.hasEnemy = false;
+    }
+
+    const shiftHeld = !!keys["shift"];
+    if (dashCooldown > 0) dashCooldown--;
+    if (shiftHeld && !prevShift && dashCooldown <= 0) {
+      const dir = player.facing || 1;
+      const dashDist = canvas.width * 0.2;
+      const startX = player.x;
+      const endX = Math.min(Math.max(player.x + dir * dashDist, player.r), canvas.width - player.r);
+      const dashTargets = enemies.concat(flyers).concat(sirKibbles)
+        .filter(e => dashPathHitsEnemy(e, startX, endX, player.y))
+        .sort((a, b) => Math.abs(a.x - startX) - Math.abs(b.x - startX));
+
+      dashTrail.push({
+        x1: startX,
+        x2: endX,
+        y: player.y,
+        dir,
+        life: 14
+      });
+
+      if (dashTargets.length > 0 && !upgrades.shadowStep) {
+        const hit = dashTargets[0];
+        player.x = Math.min(Math.max(hit.x - dir * (hit.r + player.r + 2), player.r), canvas.width - player.r);
+        damagePlayerFromEnemy(hit, 50);
+      } else {
+        player.x = endX;
+        if (upgrades.shadowStep) {
+          for (const e of dashTargets) killEnemyFromShadowStep(e);
+        }
+      }      dashCooldown = DASH_COOLDOWN_FRAMES;
+    }
+    prevShift = shiftHeld;
+
+    const merryHelperCooldown = upgrades.theMoreTheMerrier ? 30 : 60;
+
+    if ((keys["b"]) && helperCooldown <= 0) {
+      const isSpecial = Math.random() < specialChance;
+      spawnHelper(isSpecial, false);
+      helperCooldown = merryHelperCooldown;
+    }
+
+    if ((keys["x"]) && helperCooldown <= 0) {
+      spawnHelper(true, false);
+      helperCooldown = merryHelperCooldown;
+    }
+
+    if (helperCooldown > 0) helperCooldown--;
+
+    // The More, the Merrier: V toggles auto-summon
+    const vHeld = !!keys["v"];
+    if (vHeld && !prevV) {
+      // Grant 1 Strong Puffs + 1 Swift Step for free
+      grantFreeStrongPuffs(1);
+      swiftStepsCount++;
+      swiftStepsCost = Math.round(swiftStepsCost * 1.05);
+      swiftStepsCountEl.textContent = `×${swiftStepsCount} owned (+${swiftStepsCount * 2}% spd)`;
+      swiftStepsCostEl.textContent  = `⭐ ${swiftStepsCost}`;
+    }
+    prevV = vHeld;
+
+    if (autoHelperActive && upgrades.theMoreTheMerrier) {
+      autoHelperTimer++;
+      if (autoHelperTimer >= merryHelperCooldown && helperCooldown <= 0) {
+        autoHelperTimer = 0;
+        const isSpecial = Math.random() < specialChance;
+        spawnHelper(isSpecial, false);
+        helperCooldown = merryHelperCooldown;
+      }
+    } else {
+      autoHelperTimer = 0;
+    }
+
+    const pHeld = !!keys["p"];
+    if (pHeld && !prevP) {
+      if (!yellowHelperPresent) {
+        spawnHelper(false, true);
+        yellowHelperPresent = true;
+      } else {
+        for (const h of helpers) {
+          if (h.yellow && !h.dead) {
+            killHelper(h, false);
+          }
+        }
+        yellowHelperPresent = false;
+      }
+    }
+    prevP = pHeld;
+
+    const gHeld = !!keys["g"];
+    if (gHeld && !prevG) {
+      const pileX = player.x + player.facing * (player.r * 0.8);
+      const pileY = player.y + player.r * 0.7;
+      spawnFirePile(pileX, pileY, false);
+    }
+    prevG = gHeld;
+
+    const fHeld = !!keys["f"];
+    if (fHeld && !prevF) {
+      spawnBluePile(player.x, player.y);
+    }
+    prevF = fHeld;
+
+    const nHeld = !!keys["n"];
+    if (nHeld && !prevN) {
+      spawnLightningBall(player.x, player.y, 44, 180);
+    }
+    prevN = nHeld;
+
+    const mHeld = !!keys["m"];
+    if (mHeld && !prevM) {
+      permanentOvercharge = !permanentOvercharge;
+      if (permanentOvercharge) {
+        swordOverchargeTimer = getOverchargeDuration();
+      } else {
+        swordOverchargeTimer = 0;
+      }
+    }
+    prevM = mHeld;
+
+    const uHeld = !!keys["u"];
+    if (uHeld && !prevU) {
+      let newlyGranted = 0;
+      Object.keys(upgrades).forEach(id => {
+        if (!upgrades[id]) {
+          upgrades[id] = true;
+          newlyGranted++;
+        }
+        const el = document.querySelector(`.shopItem[data-id="${id}"]`);
+        if (el) el.classList.add("owned");
+      });
+      grantFreeStrongPuffs(newlyGranted * 3);
+      applyUpgrades();
+    }
+    prevU = uHeld;
+
+    const cHeld = !!keys["c"];
+    if (cHeld && !prevC) {
+      difficulty = Math.min(difficulty + 0.5, 6);
+      diffScaling += 0.5;
+    }
+    prevC = cHeld;
+
+    if (permanentOvercharge) {
+      swordOverchargeTimer = getOverchargeDuration();
+    } else if (swordOverchargeTimer > 0) {
+      swordOverchargeTimer--;
+    }
+    if (swordCooldown > 0) swordCooldown--;
+
+    const tHeld = !!keys["t"];
+    if (tHeld && !prevT && !sword.active && swordCooldown <= 0) {
+      sword.active = true;
+      sword.type = "side";
+      sword.facing = player.facing;
+      sword.timer = getSwingFrames();
+      sword.hitEnemies = new Set();
+      sword.parried = new Set();
+      sword.trailSlices = [];
+      sword.spawnedShockwave = false;
+      sword.overchargeTriggeredThisSwing = false;
+      if (isSwordOvercharged() && Math.random() < 0.05) {
+        spawnSwordShockwave(sword.facing);
+        sword.spawnedShockwave = true;
+      }
+    }
+    prevT = tHeld;
+
+    const yHeld = !!keys["y"];
+    if (yHeld && !prevY && !sword.active && swordCooldown <= 0) {
+      sword.active = true;
+      sword.type = "pogo";
+      sword.facing = player.facing;
+      sword.timer = getSwingFrames();
+      sword.hitEnemies = new Set();
+      sword.parried = new Set();
+      sword.trailSlices = [];
+      sword.spawnedShockwave = false;
+      sword.overchargeTriggeredThisSwing = false;
+      if (isSwordOvercharged() && Math.random() < 0.05) {
+        spawnSwordShockwave(sword.facing);
+        sword.spawnedShockwave = true;
+      }
+    }
+    prevY = yHeld;
+
+    const zHeld = !!keys["z"];
+    if (zHeld && !prevZ) {
+      spawnManualShockwave();
+    }
+    prevZ = zHeld;
+
+    // ---- SWORD UPDATE ----
+    if (sword.active) {
+      sword.timer--;
+      const swingFrames = getSwingFrames();
+      const elapsed = swingFrames - sword.timer;
+      const progress = elapsed / swingFrames; // 0→1
+
+      const overchargedNow = isSwordOvercharged();
+      const reachMult = upgrades.metaReach ? 1.5 : 1.0;
+      const swordLen = player.r * 5 * (overchargedNow ? 1.5 : 1) * reachMult;
+      const hiltLen  = player.r * 1.1;
+      const angle = swordBladeAngle(sword.type, sword.facing, progress);
+
+      // Hand world position (pommel sits here, blade starts at hiltLen beyond)
+      const sizeBoostUpd = player.hasEnemy ? 1.25 : 1.0;
+      const handWX = player.x + (player.facing >= 0 ? 18 : -18) * sizeBoostUpd;
+      const handWY = player.y + (player.hover ? -2 : 2);
+
+      // Blade slice: sample points from guard outward to tip (blade only, not hilt)
+      const slice = [];
+      for (let s = 0; s <= 8; s++) {
+        const t = s / 8;
+        slice.push({
+          x: handWX + Math.cos(angle) * (hiltLen + swordLen * t),
+          y: handWY + Math.sin(angle) * (hiltLen + swordLen * t)
+        });
+      }
+      sword.trailSlices.push({ points: slice, life: 12, maxLife: 12, overcharged: overchargedNow });
+
+      // Collision: check all blade points against enemies
+      const allTargets = enemies.concat(flyers).concat(sirKibbles);
+      for (const pt of slice) {
+        for (const e of allTargets) {
+          if (!e.alive || sword.hitEnemies.has(e)) continue;
+          if (Math.hypot(e.x - pt.x, e.y - pt.y) < e.r + 10) {
+            sword.hitEnemies.add(e);
+            const baseSwordDmg = upgrades.metaJab ? 50 : 25;
+            const overchargedNow = isSwordOvercharged();
+            const swordDmg = overchargedNow ? baseSwordDmg * 2 : baseSwordDmg;
+            dealDamage(e, swordDmg);
+            // Schedule delayed shock: 0.5x base sword dmg after 2 seconds (120 frames)
+            if (overchargedNow && e.alive) {
+              swordShocks.push({ enemy: e, timer: 120, dmg: baseSwordDmg * 0.5 });
+            }
+            // Star burst on every sword hit
+            swordKillExplosions.push({
+              x: e.x, y: e.y, life: 28, maxLife: 28,
+              particles: Array.from({ length: 8 }, (_, i) => ({
+                angle: (i / 8) * Math.PI * 2, speed: 2.5 + Math.random() * 2.5,
+                r: 9 + Math.random() * 6, spin: Math.random() * Math.PI * 2,
+                life: 28, maxLife: 28
+              }))
+            });
+            if (e.alive) maybeSwordProcLightning(e);
+            if (sword.type === "pogo") player.vy = -9 * getPogoBoostMultiplier();
+            if (!sword.overchargeTriggeredThisSwing && sword.hitEnemies.size >= getOverchargeThreshold()) {
+              sword.overchargeTriggeredThisSwing = true;
+              swordOverchargeTimer = getOverchargeDuration();
+              spawnLightningBurst(player.x, player.y, 42);
+            }
+          }
+        }
+      }
+
+      // Boomerang parry + pogo
+    for (const br of boomerangs) {
+        if (br.caught || sword.parried.has(br)) continue;
+        for (const pt of slice) {
+          if (Math.hypot(br.x - pt.x, br.y - pt.y) < 30) {
+            sword.parried.add(br);
+            // Reverse the boomerang direction
+            br.vx = -br.vx * 1.5;
+            br.vy = Math.abs(br.vy) * -0.3 - 1;
+            br.phase = "out";
+            br.timer = 50;
+            // Pogo off boomerang too
+            if (sword.type === "pogo") {
+              player.vy = -9 * getPogoBoostMultiplier();
+            }
+            break;
+          }
+        }
+      }
+
+      if (sword.timer <= 0) {
+        sword.active = false;
+        swordCooldown = getSwordCooldown();
+      }
+    }
+
+    // Tick trail slices
+    for (let i = sword.trailSlices.length - 1; i >= 0; i--) {
+      sword.trailSlices[i].life--;
+      if (sword.trailSlices[i].life <= 0) sword.trailSlices.splice(i, 1);
+    }
+
+    // Tick sword kill explosions
+    for (const ex of swordKillExplosions) {
+      ex.life--;
+      for (const p of ex.particles) p.life--;
+    }
+    for (let i = swordKillExplosions.length - 1; i >= 0; i--) {
+      if (swordKillExplosions[i].life <= 0) swordKillExplosions.splice(i, 1);
+    }
+
+    // Tick overcharge aftershocks (2s delay, then 0.5x sword dmg)
+    for (let i = swordShocks.length - 1; i >= 0; i--) {
+      const sh = swordShocks[i];
+      sh.timer--;
+      if (sh.timer <= 0) {
+        if (sh.enemy.alive) {
+          dealDamage(sh.enemy, sh.dmg);
+          spawnLightningBurst(sh.enemy.x, sh.enemy.y, sh.enemy.r * 1.1);
+        }
+        swordShocks.splice(i, 1);
+      }
+    }
+
+    for (const ball of lightningBalls) {
+      ball.life--;
+      if (!ball.pulse || isNaN(ball.pulse)) ball.pulse = 0;
+      ball.pulse += 0.22;
+      for (const e of enemies.concat(flyers).concat(sirKibbles)) {
+        if (!e.alive) continue;
+        ensureElectricState(e);
+        const dx = e.x - ball.x;
+        const dy = e.y - ball.y;
+        if (Math.hypot(dx, dy) < e.r + ball.r) {
+          electrifyEnemy(e, false);
+        }
+      }
+    }
+
+    for (const sw of shockwaves) {
+      sw.life--;
+      sw.x += sw.vx;
+      for (const e of enemies.concat(flyers).concat(sirKibbles)) {
+        if (!e.alive || sw.hit.has(e)) continue;
+        const dx = Math.abs(e.x - sw.x);
+        const dy = Math.abs(e.y - sw.y);
+        if (dx < sw.r + e.r && dy < sw.r * 0.7 + e.r) {
+          sw.hit.add(e);
+          electrifyEnemy(e, false);
+        }
+      }
+    }
+
+    for (const burst of lightningBursts) {
+      burst.life--;
+    }
+
+    for (const blast of helperDeathBlasts) {
+      blast.life--;
+      const currentR = blast.r * (1 - blast.life / blast.maxLife);
+      for (const spark of blast.sparks) {
+        spark.x += spark.vx;
+        spark.y += spark.vy;
+        spark.vy += 0.08;
+        spark.life--;
+      }
+      for (const e of enemies.concat(flyers).concat(sirKibbles)) {
+        if (!e.alive || blast.hitEnemies.has(e)) continue;
+        const dist = Math.hypot(e.x - blast.x, e.y - blast.y);
+        if (dist < e.r + currentR) {
+          blast.hitEnemies.add(e);
+          applyBurnFromHelper(e, blast.sourceYellow || blast.special, blast.id);
+          score += blast.special ? 70 : 45;
+          scoreEl.textContent = "Score: " + score;
+        }
+      }
+    }
+    for (let i = helperDeathBlasts.length - 1; i >= 0; i--) {
+      if (helperDeathBlasts[i].life <= 0) helperDeathBlasts.splice(i, 1);
+    }
+
+    if (!player.onGround) {
+      player.vy += gravity * (player.hover ? 0.35 : 1);
+    }
+
+    player.x += player.vx;
+    player.y += player.vy;
+
+    if (player.x - player.r < 0) player.x = player.r;
+    if (player.x + player.r > w) player.x = w - player.r;
+    if (player.y > h + 200) resetPlayer();
+
+    if (player.y + player.r >= groundY()) {
+      player.y = groundY() - player.r;
+      player.vy = 0;
+      player.onGround = true;
+    } else {
+      player.onGround = false;
+    }
+
+    enemyTimer--;
+    if (enemyTimer <= 0) {
+      spawnEnemy();
+      enemyTimer = (120 + Math.random() * 80) / difficulty;
+    }
+
+    flyerTimer--;
+    if (flyerTimer <= 0) {
+      spawnFlyer();
+      flyerTimer = (260 + Math.random() * 260) / difficulty;
+    }
+
+    sirKibbleTimer--;
+    if (sirKibbleTimer <= 0) {
+      spawnSirKibble();
+      sirKibbleTimer = (420 + Math.random() * 240) / difficulty;
+    }
+
+    for (const e of enemies) {
+      if (!e.alive) continue;
+
+      ensureElectricState(e);
+
+      // Burn: 15 dps (doubled to 30 with Gourmet Fire) = 1 dmg per 4 frames (or 2 per 4 with GF)
+      if (e.burning) {
+        e.burnTimer--;
+        const dps = e.burnFromBlue
+          ? (upgrades.lastStand ? 80 : 50)
+          : (upgrades.gourmetFire ? 30 : 15);
+        e.burnDmgAccum = (e.burnDmgAccum || 0) + dps / 60;
+        if (e.burnDmgAccum >= 1) {
+          const dmgChunk = Math.floor(e.burnDmgAccum * 10) / 10;
+          e.burnDmgAccum -= dmgChunk;
+          dealDamage(e, dmgChunk);
+          if (!e.alive) continue;
+        }
+        if (e.burnTimer <= 0) {
+          e.burning = false; e.burnStacks = 0;
+        }
+      }
+      // Electric: 25 dps (35 with Plasma Properties)
+      if (e.electrified) {
+        e.electrifyTimer--;
+        const edps = upgrades.plasmaProperties ? 35 : 25;
+        e.electDmgAccum = (e.electDmgAccum || 0) + edps / 60;
+        if (e.electDmgAccum >= 1) {
+          const dmgChunk = Math.floor(e.electDmgAccum * 10) / 10;
+          e.electDmgAccum -= dmgChunk;
+          dealDamage(e, dmgChunk);
+          if (!e.alive) continue;
+        }
+        if (e.electrifyTimer <= 0) {
+          e.electrified = false;
+        }
+      }
+
+      e.x += e.vx;
+
+      if (e.y + e.r < groundY()) {
+        e.vy += gravity * 0.6;
+      } else {
+        e.y = groundY() - e.r;
+        e.vy = 0;
+      }
+      e.y += e.vy;
+
+      if (e.x < -200 || e.x > w + 200) e.alive = false;
+
+      const dx = e.x - player.x;
+      const dy = e.y - player.y;
+      const dist = Math.hypot(dx, dy);
+
+      if (player.inhale && !player.hasEnemy) {
+        const inFront = Math.sign(dx) === player.facing || Math.abs(dx) < 10;
+        if (dist < (player.inhaleRadius * (upgrades.vortexVariety ? 1.5 : 1)) && inFront) {
+          const pull = 4.5;
+          e.x -= (dx / dist) * pull;
+          e.y -= (dy / dist) * pull;
+
+          if (dist < player.r + 8) {
+            e.alive = false;
+            player.hasEnemy = true;
+            score += 150;
+            scoreEl.textContent = "Score: " + score;
+          }
+        }
+      }
+
+      if (!player.inhale && player.invuln <= 0) {
+        if (dist < e.r + player.r - 4) {
+          damagePlayerFromEnemy(e, 50);
+        }
+      }
+    }
+
+    for (const f of flyers) {
+      if (!f.alive) continue;
+
+      ensureElectricState(f);
+
+      if (f.burning) {
+        f.burnTimer--;
+        const dps = f.burnFromBlue
+          ? (upgrades.lastStand ? 80 : 50)
+          : (upgrades.gourmetFire ? 30 : 15);
+        f.burnDmgAccum = (f.burnDmgAccum || 0) + dps / 60;
+        if (f.burnDmgAccum >= 1) {
+          const dmgChunk = Math.floor(f.burnDmgAccum * 10) / 10;
+          f.burnDmgAccum -= dmgChunk;
+          dealDamage(f, dmgChunk);
+          if (!f.alive) continue;
+        }
+        if (f.burnTimer <= 0) { f.burning = false; f.burnStacks = 0; }
+      }
+      if (f.electrified) {
+        f.electrifyTimer--;
+        const edps = upgrades.plasmaProperties ? 35 : 25;
+        f.electDmgAccum = (f.electDmgAccum || 0) + edps / 60;
+        if (f.electDmgAccum >= 1) {
+          const dmgChunk = Math.floor(f.electDmgAccum * 10) / 10;
+          f.electDmgAccum -= dmgChunk;
+          dealDamage(f, dmgChunk);
+          if (!f.alive) continue;
+        }
+        if (f.electrifyTimer <= 0) { f.electrified = false; }
+      }
+
+      f.x += f.vx;
+      f.t += 0.08;
+      f.y = f.baseY + Math.sin(f.t) * f.r;
+
+      if (f.x < -200 || f.x > w + 200) f.alive = false;
+
+      const dx = f.x - player.x;
+      const dy = f.y - player.y;
+      const dist = Math.hypot(dx, dy);
+
+      if (player.inhale && !player.hasEnemy) {
+        const inFront = Math.sign(dx) === player.facing || Math.abs(dx) < 10;
+        if (dist < (player.inhaleRadius * (upgrades.vortexVariety ? 1.5 : 1)) && inFront) {
+          const pull = 4.5;
+          f.x -= (dx / dist) * pull;
+          f.y -= (dy / dist) * pull;
+
+          if (dist < player.r + 8) {
+            f.alive = false;
+            player.hasEnemy = true;
+            score += 200;
+            scoreEl.textContent = "Score: " + score;
+          }
+        }
+      }
+
+      if (!player.inhale && player.invuln <= 0) {
+        if (dist < f.r + player.r - 4) {
+          damagePlayerFromEnemy(f, 50);
+        }
+      }
+    }
+
+    for (const sk of sirKibbles) {
+      if (!sk.alive) continue;
+
+      ensureElectricState(sk);
+
+      if (sk.burning) {
+        sk.burnTimer--;
+        const dps = sk.burnFromBlue
+          ? (upgrades.lastStand ? 80 : 50)
+          : (upgrades.gourmetFire ? 30 : 15);
+        sk.burnDmgAccum = (sk.burnDmgAccum || 0) + dps / 60;
+        if (sk.burnDmgAccum >= 1) {
+          const dmgChunk = Math.floor(sk.burnDmgAccum * 10) / 10;
+          sk.burnDmgAccum -= dmgChunk;
+          dealDamage(sk, dmgChunk);
+          if (!sk.alive) continue;
+        }
+        if (sk.burnTimer <= 0) { sk.burning = false; sk.burnStacks = 0; }
+      }
+      if (sk.electrified) {
+        sk.electrifyTimer--;
+        const edps = upgrades.plasmaProperties ? 35 : 25;
+        sk.electDmgAccum = (sk.electDmgAccum || 0) + edps / 60;
+        if (sk.electDmgAccum >= 1) {
+          const dmgChunk = Math.floor(sk.electDmgAccum * 10) / 10;
+          sk.electDmgAccum -= dmgChunk;
+          dealDamage(sk, dmgChunk);
+          if (!sk.alive) continue;
+        }
+        if (sk.electrifyTimer <= 0) { sk.electrified = false; }
+      }
+
+      sk.throwCooldown--;
+      sk.jumpCooldown--;
+
+      if (sk.y + sk.r < groundY()) {
+        sk.vy += gravity * 0.6;
+      } else {
+        sk.y = groundY() - sk.r;
+        sk.vy = 0;
+      }
+
+      if (sk.state === "move") {
+        sk.x += sk.vx;
+        if (sk.x < -200 || sk.x > w + 200) sk.alive = false;
+
+        if (sk.jumpCooldown <= 0 && Math.random() < 0.02 && sk.vy === 0) {
+          sk.vy = -7;
+          sk.jumpCooldown = 120 + Math.random() * 120;
+        }
+
+        if (sk.throwCooldown <= 0 && sk.hasBoomerang) {
+          sk.state = "windup";
+          sk.stateTimer = 60;
+          sk.vx = 0;
+        }
+      } else if (sk.state === "windup") {
+        sk.stateTimer--;
+        if (sk.stateTimer <= 0) {
+          sk.facing = player.x >= sk.x ? 1 : -1;
+          spawnBoomerang(sk);
+          sk.hasBoomerang = false;
+          sk.throwCooldown = 180 + Math.random() * 60;
+          sk.state = "move";
+          sk.vx = 1.4 * sk.facing;
+        }
+      } else if (sk.state === "catchPause") {
+        sk.stateTimer--;
+        if (sk.stateTimer <= 0) {
+          sk.state = "move";
+          sk.vx = 1.4 * sk.facing;
+        }
+      }
+
+      sk.y += sk.vy;
+
+      const dx = sk.x - player.x;
+      const dy = sk.y - player.y;
+      const dist = Math.hypot(dx, dy);
+
+      if (player.inhale && !player.hasEnemy) {
+        const inFront = Math.sign(dx) === player.facing || Math.abs(dx) < 10;
+        if (dist < (player.inhaleRadius * (upgrades.vortexVariety ? 1.5 : 1)) && inFront) {
+          const pull = 4.5;
+          sk.x -= (dx / dist) * pull;
+          sk.y -= (dy / dist) * pull;
+
+          if (dist < player.r + 8) {
+            sk.alive = false;
+            player.hasEnemy = true;
+            score += 220;
+            scoreEl.textContent = "Score: " + score;
+          }
+        }
+      }
+
+      if (!player.inhale && player.invuln <= 0) {
+        if (dist < sk.r + player.r - 4) {
+          damagePlayerFromEnemy(sk, 50);
+        }
+      }
+    }
+
+    for (const s of stars) {
+      s.x += s.vx;
+      s.y += s.vy;
+      s.angle += (4 * 2 * Math.PI) / 60;
+      s.trail.push({ x: s.x, y: s.y, angle: s.angle, r: s.r, life: 50, maxLife: 50 });
+      if (s.trail.length > 60) s.trail.shift();
+      for (let i = s.trail.length - 1; i >= 0; i--) {
+        s.trail[i].life--;
+        if (s.trail[i].life <= 0) s.trail.splice(i, 1);
+      }
+    }
+
+    for (const s of stars) {
+      for (const e of enemies) {
+        if (!e.alive) continue;
+        if (Math.hypot(e.x - s.x, e.y - s.y) < e.r + s.r) {
+          spawnStarPoof(s.x, s.y, s.r);
+          const dmg = (upgrades.starSeries ? 100 : 75) * (upgrades.vortexVariety ? 2 : 1);
+          dealDamage(e, dmg);
+          if (s.pierceLeft > 0) { s.pierceLeft--; } else { s.dead = true; }
+        }
+      }
+      for (const f of flyers) {
+        if (!f.alive) continue;
+        if (Math.hypot(f.x - s.x, f.y - s.y) < f.r + s.r) {
+          spawnStarPoof(s.x, s.y, s.r);
+          const dmg = (upgrades.starSeries ? 100 : 75) * (upgrades.vortexVariety ? 2 : 1);
+          dealDamage(f, dmg);
+          if (s.pierceLeft > 0) { s.pierceLeft--; } else { s.dead = true; }
+        }
+      }
+      for (const sk of sirKibbles) {
+        if (!sk.alive) continue;
+        if (Math.hypot(sk.x - s.x, sk.y - s.y) < sk.r + s.r) {
+          spawnStarPoof(s.x, s.y, s.r);
+          const dmg = (upgrades.starSeries ? 100 : 75) * (upgrades.vortexVariety ? 2 : 1);
+          dealDamage(sk, dmg);
+          if (s.pierceLeft > 0) { s.pierceLeft--; } else { s.dead = true; }
+        }
+      }
+      for (const br of boomerangs) {
+        if (br.caught || s.dead) continue;
+        if (Math.hypot(br.x - s.x, br.y - s.y) < s.r + 14) {
+          s.dead = true; br.caught = true;
+          spawnStarPoof(s.x, s.y, s.r * 0.9);
+        }
+      }
+    }
+
+    const specialStopRange = 280;
+    for (const h of helpers) {
+      if (h.dead) continue;
+
+      if (h.invuln > 0) h.invuln--;
+
+      if (!h.special && !h.yellow) {
+        h.life--;
+        if (h.life <= 0) {
+          killHelper(h, true);
+          continue;
+        }
+      }
+
+      if (h.y + h.r < groundY()) {
+        h.vy += 0.4;
+      } else {
+        h.y = groundY() - h.r;
+        h.vy = 0;
+      }
+
+      if (h.special) {
+        h.trail.push({ x: h.x, y: h.y, life: 40 });
+        if (h.trail.length > 90) h.trail.shift();
+      }
+
+      const groundEnemies = enemies.filter(e => e.alive)
+        .concat(sirKibbles.filter(sk => sk.alive));
+      if (groundEnemies.length === 0 && !flyers.some(f => f.alive)) {
+        h.vx *= 0.8;
+        h.x += h.vx;
+        h.y += h.vy;
+      } else {
+        let nearest = null;
+        let bestDist = 999999;
+        const allEnemies = enemies.concat(flyers).concat(sirKibbles);
+        for (const e of allEnemies) {
+          if (!e.alive) continue;
+          const dx = e.x - h.x;
+          const dy = e.y - h.y;
+          const d = Math.hypot(dx, dy);
+          if (d < bestDist) {
+            bestDist = d;
+            nearest = e;
+          }
+        }
+        h.target = nearest;
+
+        if (nearest) {
+          const dx = nearest.x - h.x;
+          const dy = nearest.y - h.y;
+
+          if (h.special && bestDist > specialStopRange) {
+            h.vx = 0;
+            h.vy = 0;
+          } else {
+            h.vx += Math.sign(dx) * 0.4;
+            h.vx *= 0.85;
+
+            if (nearest.y < h.y - 40 && h.vy === 0) {
+              h.vy = -7;
+            }
+          }
+
+          if (h.special) {
+            h.fireTimer--;
+            if (h.fireTimer <= 0) {
+              h.fireTimer = 120 + Math.random() * 60;
+              h.vx = 0;
+              h.vy = 0;
+              specialFireballs.push({
+                x: h.x,
+                y: h.y - 6,
+                vx: (nearest.x - h.x) * 0.06,
+                vy: (nearest.y - h.y) * 0.06,
+                r: 30,
+                dead: false,
+                particles: [],
+                pierce: 3 + Math.floor(Math.random() * 3),
+                helperKind: "special",
+                spin: Math.random() * Math.PI * 2,
+                pulse: Math.random() * Math.PI * 2,
+                trail: [],
+                sourceHelperId: h.id
+              });
+            }
+          } else {
+            if (bestDist < 180) {
+              h.vx = 0;
+              h.vy = 0;
+              for (let i = 0; i < 3; i++) {
+                fireParticles.push({
+                  x: h.x,
+                  y: h.y - 6,
+                  vx: (nearest.x - h.x) * 0.05 + (Math.random() - 0.5) * 0.6,
+                  vy: (nearest.y - h.y) * 0.05 + (Math.random() - 0.5) * 0.6,
+                  life: 24,
+                  maxLife: 24,
+                  color: h.yellow ? "yellow" : (Math.random() < 0.5 ? "red" : "orange"),
+                  dead: false,
+                  sourceYellow: !!h.yellow,
+                  sourceHelper: true,
+                  sourceHelperId: h.id,
+                  helperKind: h.yellow ? "yellow" : "normal",
+                  spin: Math.random() * Math.PI * 2,
+                  wobble: Math.random() * Math.PI * 2
+                });
+              }
+            }
+          }
+        } else {
+          h.vx *= 0.9;
+        }
+
+        h.x += h.vx;
+        h.y += h.vy;
+      }
+
+      if (!h.special) {
+        h.fireChanceTimer++;
+        if (Math.random() < 0.0005 && flyers.some(f => f.alive)) {
+          let nearestFlyer = null;
+          let best = 999999;
+          for (const f of flyers) {
+            if (!f.alive) continue;
+            const dx = f.x - h.x;
+            const dy = f.y - h.y;
+            const d = Math.hypot(dx, dy);
+            if (d < best) {
+              best = d;
+              nearestFlyer = f;
+            }
+          }
+          if (nearestFlyer) {
+            const dx = nearestFlyer.x - h.x;
+            const dy = nearestFlyer.y - h.y;
+            const len = Math.hypot(dx, dy) || 1;
+            const speed = 6;
+            helperFireballs.push({
+              x: h.x,
+              y: h.y - 6,
+              vx: (dx / len) * speed,
+              vy: (dy / len) * speed,
+              r: h.yellow ? 13 : 10,
+              dead: false,
+              particles: [],
+              helperKind: h.yellow ? "yellow" : "normal",
+              spin: Math.random() * Math.PI * 2,
+              pulse: Math.random() * Math.PI * 2,
+              trail: [],
+              sourceHelperId: h.id
+            });
+          }
+        }
+      }
+
+      const allEnemies2 = enemies.concat(flyers).concat(sirKibbles);
+      for (const e of allEnemies2) {
+        if (!e.alive || h.dead) continue;
+        const dx = e.x - h.x;
+        const dy = e.y - h.y;
+        const dist = Math.hypot(dx, dy);
+
+        if (h.special && h.spikes > 0) {
+          const spikeShieldRadius = h.r + h.r * 0.4;
+          if (dist < spikeShieldRadius && h.invuln <= 0) {
+            h.spikes--;
+            h.invuln = 36;
+            applyBurnFromHelper(e, true, h.id);
+            score += 45;
+            scoreEl.textContent = "Score: " + score;
+
+            if (h.spikes <= 0) {
+              h.special = false;
+              h.r = 18;
+              h.life = upgrades.theMoreTheMerrier ? 1800 : 1200;
+              h.trail = [];
+            }
+            continue;
+          } else if (dist < spikeShieldRadius) {
+            continue; // still in invuln, blocked
+          }
+        } else {
+          if (dist < e.r + h.r) {
+            // Direct damage: 2 per 20fps frame = every 3 frames at 60fps
+            if (!h._dmgFrame) h._dmgFrame = 0;
+            h._dmgFrame++;
+            if (h._dmgFrame >= 3) { h._dmgFrame = 0; dealDamage(e, 2); }
+            if (h.yellow) {
+              const knockDir = Math.sign(h.x - e.x) || 1;
+              h.vx = knockDir * 4;
+              h.vy = -5;
+            } else {
+              killHelper(h, true);
+            }
+          } else {
+            // reset damage frame when not touching
+            h._dmgFrame = 0;
+          }
+        }
+      }
+    }
+
+    for (const p of fireParticles) {
+      if (p.dead) continue;
+      p.x += p.vx;
+      p.y += p.vy;
+      if (p.sourceHelper) {
+        p.spin = (p.spin || 0) + 0.35;
+        p.wobble = (p.wobble || 0) + 0.22;
+        p.x += Math.cos(p.wobble) * 0.35;
+        p.y += Math.sin(p.wobble * 1.4) * 0.2;
+      }
+      p.life--;
+      if (p.life <= 0) {
+        p.dead = true;
+        continue;
+      }
+
+      const allEnemies = enemies.concat(flyers).concat(sirKibbles);
+      for (const e of allEnemies) {
+        if (!e.alive || p.dead) continue;
+        const dx = e.x - p.x;
+        const dy = e.y - p.y;
+        const d = Math.hypot(dx, dy);
+        if (d < e.r + 4) {
+          if ("burning" in e) {
+            applyBurnFromHelper(e, !!p.sourceYellow, p.sourceHelperId);
+            score += 80;
+            scoreEl.textContent = "Score: " + score;
+          } else {
+            e.alive = false;
+            score += 80;
+            scoreEl.textContent = "Score: " + score;
+          }
+          p.dead = true;
+        }
+      }
+    }
+
+    for (const pile of firePiles) {
+      if (pile.dead) continue;
+
+      pile.life--;
+      if (pile.life <= 0) {
+        pile.dead = true;
+        if (pile.blue && pile.onGround) bluePopBurst(pile.x, pile.y);
+        if (upgrades.lastStand && pile.onGround) {
+          spawnLastStandExplosion(pile.x, pile.y, pile.blue);
+        }
+        continue;
+      }
+
+      if (!pile.onGround) {
+        pile.vy += gravity * 0.6;
+        pile.x += pile.vx;
+        pile.y += pile.vy;
+        if (pile.y >= groundY()) {
+          pile.y = groundY();
+          pile.vy = 0;
+          pile.vx *= 0.6;
+          pile.onGround = true;
+          if (!pile.charSpawned) {
+            spawnCharPile(pile.x, pile.y, pile.sourceYellow, pile.blue);
+            pile.charSpawned = true;
+          }
+        }
+      }
+
+      const pileTargets = enemies.concat(flyers).concat(sirKibbles);
+      for (const e of pileTargets) {
+        if (!e.alive || pile.dead) continue;
+        if (!pile.blue && pile.consumed) continue;
+        if (pile.blue && pile.hitEnemies && pile.hitEnemies.has(e)) continue;
+        const dx = e.x - pile.x;
+        const dy = e.y - pile.y;
+        const dist = Math.hypot(dx, dy);
+        if (dist < e.r + pile.r) {
+          applyBurnFromPile(e, pile.blue);
+          if (pile.blue) {
+            pile.hitEnemies.add(e);
+            pile.hitsLeft--;
+            if (pile.hitsLeft <= 0) {
+              pile.dead = true;
+              bluePopBurst(pile.x, pile.y);
+            }
+            break;
+          } else {
+            pile.consumed = true;
+            pile.dead = true;
+          }
+        }
+      }
+    }
+
+    for (const fb of specialFireballs) {
+      if (fb.dead) continue;
+
+      let target = null;
+      let best = 999999;
+      for (const e of enemies.concat(flyers).concat(sirKibbles)) {
+        if (!e.alive) continue;
+        const dx = e.x - fb.x;
+        const dy = e.y - fb.y;
+        const d = Math.hypot(dx, dy);
+        if (d < best) {
+          best = d;
+          target = e;
+        }
+      }
+      if (target) {
+        const dx = target.x - fb.x;
+        const dy = target.y - fb.y;
+        const len = Math.hypot(dx, dy) || 1;
+        const desiredVx = (dx / len) * 7;
+        const desiredVy = (dy / len) * 7;
+        const homingStrength = 0.08;
+        fb.vx += (desiredVx - fb.vx) * homingStrength;
+        fb.vy += (desiredVy - fb.vy) * homingStrength;
+      }
+
+      fb.x += fb.vx;
+      fb.y += fb.vy;
+      fb.spin = (fb.spin || 0) + 0.24;
+      fb.pulse = (fb.pulse || 0) + 0.18;
+      if (fb.trail) {
+        fb.trail.push({ x: fb.x, y: fb.y, r: fb.r, life: 18, maxLife: 18 });
+        if (fb.trail.length > 14) fb.trail.shift();
+        for (let i = fb.trail.length - 1; i >= 0; i--) {
+          fb.trail[i].life--;
+          if (fb.trail[i].life <= 0) fb.trail.splice(i, 1);
+        }
+      }
+
+      for (let fp = 0; fp < 4; fp++) {
+        fb.particles.push({
+          x: fb.x + (Math.random() - 0.5) * fb.r * 2,
+          y: fb.y + (Math.random() - 0.5) * fb.r * 2,
+          life: 18,
+          color: ["deepYellow", "deepOrange", "deepRed"][Math.floor(Math.random() * 3)]
+        });
+      }
+      while (fb.particles.length > 70) fb.particles.shift();
+
+      for (const e of enemies.concat(flyers).concat(sirKibbles)) {
+        if (!e.alive || fb.dead) continue;
+        const dx = e.x - fb.x;
+        const dy = e.y - fb.y;
+        const d = Math.hypot(dx, dy);
+        if (d < e.r + fb.r) {
+          applyBurnFromHelper(e, true, fb.sourceHelperId);
+          score += 60;
+          scoreEl.textContent = "Score: " + score;
+          fb.pierce--;
+          if (fb.pierce <= 0) {
+            fb.dead = true;
+            spawnSpecialExplosion(fb.x, fb.y);
+          }
+        }
+      }
+
+      if (!fb.dead && (fb.x < -200 || fb.x > canvas.width + 200 ||
+          fb.y < -200 || fb.y > canvas.height + 200)) {
+        fb.dead = true;
+        spawnSpecialExplosion(fb.x, fb.y);
+      }
+    }
+
+    for (const hb of helperFireballs) {
+      if (hb.dead) continue;
+
+      let target = null;
+      let best = 999999;
+      for (const f of flyers) {
+        if (!f.alive) continue;
+        const dx = f.x - hb.x;
+        const dy = f.y - hb.y;
+        const d = Math.hypot(dx, dy);
+        if (d < best) {
+          best = d;
+          target = f;
+        }
+      }
+      if (target) {
+        const dx = target.x - hb.x;
+        const dy = target.y - hb.y;
+        const len = Math.hypot(dx, dy) || 1;
+        const desiredVx = (dx / len) * 6;
+        const desiredVy = (dy / len) * 6;
+        const homingStrength = 0.1;
+        hb.vx += (desiredVx - hb.vx) * homingStrength;
+        hb.vy += (desiredVy - hb.vy) * homingStrength;
+      }
+
+      hb.x += hb.vx;
+      hb.y += hb.vy;
+      hb.spin = (hb.spin || 0) + 0.32;
+      hb.pulse = (hb.pulse || 0) + 0.22;
+      if (hb.trail) {
+        hb.trail.push({ x: hb.x, y: hb.y, r: hb.r, life: 14, maxLife: 14 });
+        if (hb.trail.length > 10) hb.trail.shift();
+        for (let i = hb.trail.length - 1; i >= 0; i--) {
+          hb.trail[i].life--;
+          if (hb.trail[i].life <= 0) hb.trail.splice(i, 1);
+        }
+      }
+
+      const huePick = Math.random();
+      let rgb;
+      if (huePick < 0.33) rgb = "255,220,80";
+      else if (huePick < 0.66) rgb = "255,160,60";
+      else rgb = "220,60,60";
+
+      for (let hp = 0; hp < 3; hp++) {
+        hb.particles.push({
+          x: hb.x + (Math.random() - 0.5) * hb.r * 2,
+          y: hb.y + (Math.random() - 0.5) * hb.r * 2,
+          life: 12,
+          rgb
+        });
+      }
+      while (hb.particles.length > 55) hb.particles.shift();
+
+      for (const f of flyers) {
+        if (!f.alive || hb.dead) continue;
+        const dx = f.x - hb.x;
+        const dy = f.y - hb.y;
+        const d = Math.hypot(dx, dy);
+        if (d < f.r + hb.r) {
+          applyBurnFromHelper(f, hb.helperKind === "yellow", hb.sourceHelperId);
+          hb.dead = true;
+          score += 45;
+          scoreEl.textContent = "Score: " + score;
+
+          helperExplosions.push({
+            x: hb.x,
+            y: hb.y,
+            life: 30,
+            maxLife: 30,
+            radius: 120,
+            particles: Array.from({ length: 26 }, () => ({
+              angle: Math.random() * Math.PI * 2,
+              speed: 1 + Math.random() * 2.2,
+              life: 30,
+              maxLife: 30
+            }))
+          });
+        }
+      }
+
+      if (hb.x < -200 || hb.x > canvas.width + 200 ||
+          hb.y < -200 || hb.y > canvas.height + 200) {
+        hb.dead = true;
+      }
+    }
+
+    for (const ex of helperExplosions) {
+      ex.life--;
+      for (const p of ex.particles) {
+        p.life--;
+      }
+    }
+
+    for (const ex of specialExplosions) {
+      ex.life--;
+      for (const p of ex.particles) {
+        p.life--;
+      }
+    }
+
+    for (const ex of firePoofs) {
+      ex.life--;
+      for (const p of ex.particles) p.life--;
+    }
+
+    for (const br of boomerangs) {
+      if (br.caught) continue;
+
+      br.angle += (3 * Math.PI * 2) / 60;
+
+      if (br.phase === "out") {
+        br.timer--;
+        br.x += br.vx;
+        br.y += br.vy;
+        if (br.timer <= 0) {
+          br.phase = "slow";
+        }
+      } else if (br.phase === "slow") {
+        br.vx *= 0.95;
+        br.vy *= 0.95;
+        br.x += br.vx;
+        br.y += br.vy;
+        if (Math.hypot(br.vx, br.vy) < 0.5) {
+          br.phase = "return";
+        }
+      } else if (br.phase === "return") {
+        if (!br.owner.alive) {
+          br.caught = true;
+        } else {
+          const dx = br.owner.x - br.x;
+          const dy = br.owner.y - br.y;
+          const d = Math.hypot(dx, dy) || 1;
+          const speed = 4;
+          br.vx += ((dx / d) * speed - br.vx) * 0.2;
+          br.vy += ((dy / d) * speed - br.vy) * 0.2;
+          br.x += br.vx;
+          br.y += br.vy;
+
+          if (d < br.owner.r + 6) {
+            br.caught = true;
+            br.owner.hasBoomerang = true;
+            br.owner.state = "catchPause";
+            br.owner.stateTimer = 12;
+          }
+        }
+      }
+
+      // DUAL TRAILS FROM EACH END (75% OF BLADE)
+      const arcRadius = 22 * 0.75;
+      const arcSpread = 0.3;
+      const tip1X = br.x + Math.cos(br.angle - arcSpread) * arcRadius;
+      const tip1Y = br.y + Math.sin(br.angle - arcSpread) * arcRadius;
+      const tip2X = br.x + Math.cos(br.angle + arcSpread) * arcRadius;
+      const tip2Y = br.y + Math.sin(br.angle + arcSpread) * arcRadius;
+
+      br.trail.push({
+        x: tip1X,
+        y: tip1Y,
+        life: 20,
+        maxLife: 20
+      });
+      br.trail.push({
+        x: tip2X,
+        y: tip2Y,
+        life: 20,
+        maxLife: 20
+      });
+      if (br.trail.length > 80) br.trail.splice(0, br.trail.length - 80);
+
+      if (!br.caught) {
+        const dxp = br.x - player.x;
+        const dyp = br.y - player.y;
+        const dp = Math.hypot(dxp, dyp);
+        if (dp < player.r + 10 && player.invuln <= 0) {
+          damagePlayer(200, br.x, 40);
+        }
+
+        for (const h of helpers) {
+          if (h.dead) continue;
+          const dxh = br.x - h.x;
+          const dyh = br.y - h.y;
+          const dh = Math.hypot(dxh, dyh);
+          if (dh < h.r + 10 && h.invuln <= 0) {
+            if (h.yellow) {
+              h.invuln = 40;
+              const dir = Math.sign(h.x - br.x) || 1;
+              h.vx = dir * 5;
+              h.vy = -6;
+            } else if (h.special && h.spikes > 0) {
+              h.spikes--;
+              h.invuln = 36;
+              spawnHelperDeathBlast(h.x, h.y, false, true);
+              br.caught = true;
+              if (h.spikes <= 0) {
+                h.special = false;
+                h.r = 18;
+                h.life = upgrades.theMoreTheMerrier ? 1800 : 1200;
+                h.trail = [];
+              }
+            } else {
+              spawnHelperDeathBlast(h.x, h.y, !!h.yellow, !!h.special);
+              killHelper(h, false);
+              br.caught = true;
+            }
+            break;
+          }
+        }
+      }
+    }
+
+    for (const t of dashTrail) {
+      t.life--;
+    }
+    for (let i = dashTrail.length - 1; i >= 0; i--) {
+      if (dashTrail[i].life <= 0) dashTrail.splice(i, 1);
+    }
+
+    for (let i = enemies.length - 1; i >= 0; i--) {
+      if (!enemies[i].alive) enemies.splice(i, 1);
+    }
+    for (let i = flyers.length - 1; i >= 0; i--) {
+      if (!flyers[i].alive) flyers.splice(i, 1);
+    }
+    for (let i = sirKibbles.length - 1; i >= 0; i--) {
+      if (!sirKibbles[i].alive) sirKibbles.splice(i, 1);
+    }
+    for (let i = stars.length - 1; i >= 0; i--) {
+      if (stars[i].dead || stars[i].x < -200 || stars[i].x > w + 200) {
+        if (stars[i].trail.length > 0) {
+          starTrails.push(...stars[i].trail);
+        }
+        stars.splice(i, 1);
+      }
+    }
+    for (let i = starTrails.length - 1; i >= 0; i--) {
+      starTrails[i].life--;
+      if (starTrails[i].life <= 0) starTrails.splice(i, 1);
+    }
+    yellowHelperPresent = false;
+    for (let i = helpers.length - 1; i >= 0; i--) {
+      if (helpers[i].dead) {
+        helpers.splice(i, 1);
+      } else if (helpers[i].yellow) {
+        yellowHelperPresent = true;
+      }
+    }
+    for (let i = fireParticles.length - 1; i >= 0; i--) {
+      if (fireParticles[i].dead) fireParticles.splice(i, 1);
+    }
+    for (let i = specialFireballs.length - 1; i >= 0; i--) {
+      if (specialFireballs[i].dead) specialFireballs.splice(i, 1);
+    }
+    for (let i = helperFireballs.length - 1; i >= 0; i--) {
+      if (helperFireballs[i].dead) helperFireballs.splice(i, 1);
+    }
+    for (let i = helperExplosions.length - 1; i >= 0; i--) {
+      if (helperExplosions[i].life <= 0) helperExplosions.splice(i, 1);
+    }
+    for (let i = specialExplosions.length - 1; i >= 0; i--) {
+      if (specialExplosions[i].life <= 0) specialExplosions.splice(i, 1);
+    }
+    for (const ex of starExplosions) {
+      ex.life--;
+      for (const p of ex.particles) p.life--;
+    }
+    for (let i = starExplosions.length - 1; i >= 0; i--) {
+      if (starExplosions[i].life <= 0) starExplosions.splice(i, 1);
+    }
+    for (let i = firePoofs.length - 1; i >= 0; i--) {
+      if (firePoofs[i].life <= 0) firePoofs.splice(i, 1);
+    }
+    for (let i = lightningBalls.length - 1; i >= 0; i--) {
+      if (lightningBalls[i].life <= 0) lightningBalls.splice(i, 1);
+    }
+    for (let i = lightningBursts.length - 1; i >= 0; i--) {
+      if (lightningBursts[i].life <= 0) lightningBursts.splice(i, 1);
+    }
+    for (let i = shockwaves.length - 1; i >= 0; i--) {
+      if (shockwaves[i].life <= 0 || shockwaves[i].x < -120 || shockwaves[i].x > w + 120) shockwaves.splice(i, 1);
+    }
+    for (let i = firePiles.length - 1; i >= 0; i--) {
+      if (firePiles[i].dead) firePiles.splice(i, 1);
+    }
+    for (const ch of charPiles) {
+      if (ch.dead) continue;
+      if (ch.holdLife > 0) { ch.holdLife--; } else { ch.fadeLife--; if (ch.fadeLife <= 0) ch.dead = true; }
+    }
+    for (let i = charPiles.length - 1; i >= 0; i--) {
+      if (charPiles[i].dead) charPiles.splice(i, 1);
+    }
+    for (const bx of bluePileExplosions) {
+      bx.life--;
+      bx.ring.r += bx.ring.maxR / bx.maxLife;
+      for (const s of bx.sparks) { s.x += s.vx; s.y += s.vy; s.vy += 0.18; s.life--; }
+      for (const p of bx.poppers) {
+        if (p.spawned) continue;
+        p.x += p.vx; p.y += p.vy; p.vy += 0.55; p.life--;
+        if (p.y >= groundY() || p.life <= 0) {
+          p.spawned = true;
+          spawnFirePile(p.x, Math.min(p.y, groundY()), false);
+        }
+      }
+    }
+    for (let i = bluePileExplosions.length - 1; i >= 0; i--) {
+      if (bluePileExplosions[i].life <= 0) bluePileExplosions.splice(i, 1);
+    }
+
+    // Last Stand explosion tick + enemy burn contact
+    for (const lx of lastStandExplosions) {
+      lx.life--;
+      lx.ringR += (lx.r * 1.4) / lx.maxLife;
+      for (const p of lx.particles) { p.life--; }
+      // Apply burn to any enemy in range
+      const lxTargets = enemies.concat(flyers).concat(sirKibbles);
+      for (const e of lxTargets) {
+        if (!e.alive || lx.hitEnemies.has(e)) continue;
+        if (Math.hypot(e.x - lx.x, e.y - lx.y) < lx.r * 1.3 + e.r) {
+          lx.hitEnemies.add(e);
+          applyBurnFromPile(e, lx.blue);
+        }
+      }
+    }
+    for (let i = lastStandExplosions.length - 1; i >= 0; i--) {
+      if (lastStandExplosions[i].life <= 0) lastStandExplosions.splice(i, 1);
+    }
+    for (let i = shockwaves.length - 1; i >= 0; i--) {
+      if (shockwaves[i].life <= 0 || shockwaves[i].x < -200 || shockwaves[i].x > w + 200) {
+        shockwaves.splice(i, 1);
+      }
+    }
+
+    for (let i = boomerangs.length - 1; i >= 0; i--) {
+      if (boomerangs[i].caught ||
+          boomerangs[i].x < -400 || boomerangs[i].x > w + 400 ||
+          boomerangs[i].y < -400 || boomerangs[i].y > h + 400) {
+        boomerangs.splice(i, 1);
+      }
+    }
+
+    if (player.invuln > 0) player.invuln--;
+
+    // Plasma Properties: auto lightning ball
+    if (upgrades.plasmaProperties) {
+      plasmaTimer++;
+      if (plasmaTimer >= PLASMA_INTERVAL) {
+        plasmaTimer = 0;
+        spawnLightningBall(player.x, player.y, 34, 360); // 6s = 2x normal
+      }
+    } else {
+      plasmaTimer = 0;
+    }
+
+    // Quick Quas trail
+    if (upgrades.quickQuas) {
+      quasTrail.push({ x: player.x, y: player.y, life: 12, maxLife: 12 });
+      if (quasTrail.length > 20) quasTrail.shift();
+    }
+    for (let i = quasTrail.length - 1; i >= 0; i--) {
+      quasTrail[i].life--;
+      if (quasTrail[i].life <= 0) quasTrail.splice(i, 1);
+    }
+
+    let state = "";
+    if (player.inhale && !player.hasEnemy) state = "Inhaling...";
+    else if (player.hasEnemy) state = "Holding enemy! Press K to spit star.";
+    else if (helperCooldown > 0) state = "Helper cooldown...";
+    else if (dashCooldown > 0) state = "Dash cooldown...";
+    // Inhale swirls
+    if (player.inhale && !player.hasEnemy) {
+      const inhaleR = player.inhaleRadius * (upgrades.vortexVariety ? 1.5 : 1);
+      for (let i = 0; i < 3; i++) {
+        const spawnDist = inhaleR * (0.3 + Math.random() * 0.68);
+        const coneHalf = 0.62;
+        const spread = (Math.random() - 0.5) * 2 * coneHalf;
+        // faceAngle is computed live each frame from player.facing
+        const faceAngle = player.facing >= 0 ? 0 : Math.PI;
+        // Store spawn angle RELATIVE to faceAngle so it stays consistent when direction changes
+        const relAngle = spread; // offset from face direction
+        // Perpendicular swirl direction (relative, sign varies)
+        const swirlDir = Math.random() < 0.5 ? 1 : -1;
+        inhaleSwirls.push({
+          relAngle,           // angular offset from facing, constant
+          dist: spawnDist,    // distance from player, shrinks each frame
+          swirlOffset: 0,     // accumulated perpendicular swirl
+          swirlDir,
+          life: 15 + Math.floor(Math.random() * 10),
+          maxLife: 25,
+          r: 5 + Math.random() * 8,
+          rotation: Math.random() * Math.PI * 2,
+          rotSpeed: swirlDir * (0.18 + Math.random() * 0.22)
+        });
+      }
+    }
+    for (let i = inhaleSwirls.length - 1; i >= 0; i--) {
+      const sw = inhaleSwirls[i];
+      sw.life--;
+      sw.dist *= 0.80;           // pull inward
+      sw.swirlOffset += sw.swirlDir * sw.dist * 0.012; // perp drift shrinks with dist
+      sw.rotation += sw.rotSpeed;
+      if (sw.life <= 0 || sw.dist < 3) { inhaleSwirls.splice(i, 1); }
+    }
+
+    // Difficulty scaling (~20fps tick = every 3 frames)
+    diffScalingFrameCount++;
+    if (diffScalingFrameCount >= 3) {
+      diffScalingFrameCount = 0;
+      diffScaling += DIFF_INC_PER_20FPS;
+    }
+
+    // hpBarTimer + damageNumbers tick
+    for (const e of enemies.concat(flyers).concat(sirKibbles)) {
+      if (!e.alive) continue;
+      if (e.hpBarTimer > 0) e.hpBarTimer--;
+    }
+    for (let i = damageNumbers.length - 1; i >= 0; i--) {
+      const dn = damageNumbers[i];
+      dn.y += dn.vy;
+      dn.vy *= 0.92;
+      dn.life--;
+      if (dn.life <= 0) damageNumbers.splice(i, 1);
+    }
+
+    stateEl.textContent = state;
+  }
+
+  function draw() {
+    const w = canvas.width;
+    const h = canvas.height;
+
+    ctx.clearRect(0, 0, w, h);
+
+    ctx.fillStyle = "#3a5fb8";
+    ctx.beginPath();
+    ctx.ellipse(w * 0.2, h, 380, 200, 0, Math.PI, 0);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.ellipse(w * 0.7, h, 520, 260, 0, Math.PI, 0);
+    ctx.fill();
+
+    ctx.fillStyle = "#3b2f1f";
+    ctx.fillRect(0, groundY(), w, h - groundY());
+    ctx.fillStyle = "#4caf50";
+    ctx.fillRect(0, groundY(), w, 8);
+
+    for (const t of dashTrail) {
+      const alpha = t.life / 14;
+      const x1 = t.dir > 0 ? t.x1 : t.x2;
+      const x2 = t.dir > 0 ? t.x2 : t.x1;
+      const y = t.y;
+      const grad = ctx.createLinearGradient(x1, y, x2, y);
+      grad.addColorStop(0, `rgba(255,255,255,${alpha * 0.9})`);
+      grad.addColorStop(0.4, `rgba(255,180,255,${alpha * 0.8})`);
+      grad.addColorStop(1, `rgba(255,80,200,${alpha * 0.0})`);
+      ctx.strokeStyle = grad;
+      ctx.lineWidth = 26;
+      ctx.lineCap = "round";
+      ctx.beginPath();
+      ctx.moveTo(x1, y);
+      ctx.lineTo(x2, y);
+      ctx.stroke();
+    }
+
+    function drawStarShape(cx, cy, r, angle, alpha) {
+      ctx.save();
+      ctx.globalAlpha = alpha;
+      ctx.translate(cx, cy);
+      ctx.rotate(angle);
+      ctx.fillStyle = "#ffe96b";
+      ctx.beginPath();
+      for (let i = 0; i < 5; i++) {
+        const a = (i * 2 * Math.PI) / 5 - Math.PI / 2;
+        const r1 = r;
+        const r2 = r * 0.45;
+        const x1 = Math.cos(a) * r1;
+        const y1 = Math.sin(a) * r1;
+        const x2 = Math.cos(a + Math.PI / 5) * r2;
+        const y2 = Math.sin(a + Math.PI / 5) * r2;
+        if (i === 0) ctx.moveTo(x1, y1);
+        else ctx.lineTo(x1, y1);
+        ctx.lineTo(x2, y2);
+      }
+      ctx.closePath();
+      ctx.fill();
+      ctx.restore();
+    }
+
+    function drawElectrifiedCue(entity) {
+      if (!entity.electrified) return;
+      const pulse = 0.82 + 0.18 * Math.sin(performance.now() * 0.03 + entity.x * 0.05);
+      const alpha = Math.max(0.25, Math.min(1, (entity.electrifyTimer || 0) / 120));
+
+      ctx.save();
+      ctx.globalCompositeOperation = "lighter";
+
+      const halo = ctx.createRadialGradient(0, 0, entity.r * 0.15, 0, 0, entity.r * 1.9 * pulse);
+      halo.addColorStop(0, `rgba(255,245,255,${0.18 * alpha})`);
+      halo.addColorStop(0.35, `rgba(255,120,120,${0.22 * alpha})`);
+      halo.addColorStop(0.7, `rgba(255,40,40,${0.16 * alpha})`);
+      halo.addColorStop(1, "rgba(255,0,0,0)");
+      ctx.fillStyle = halo;
+      ctx.beginPath();
+      ctx.arc(0, 0, entity.r * 1.9 * pulse, 0, Math.PI * 2);
+      ctx.fill();
+
+      for (let ring = 0; ring < 2; ring++) {
+        const rot = performance.now() * 0.01 * (ring === 0 ? 1 : -1) + ring * 1.7 + entity.x * 0.01;
+        ctx.strokeStyle = `rgba(255,${120 - ring * 30},${120 - ring * 30},${0.55 * alpha})`;
+        ctx.lineWidth = 2.2 - ring * 0.4;
+        ctx.beginPath();
+        for (let i = 0; i < 7; i++) {
+          const t = i / 6;
+          const ang = rot + t * Math.PI * 2;
+          const radius = entity.r * (1.05 + ring * 0.28) + Math.sin(ang * 3.0 + ring) * entity.r * 0.16;
+          const px = Math.cos(ang) * radius;
+          const py = Math.sin(ang) * radius * 0.82;
+          if (i === 0) ctx.moveTo(px, py);
+          else ctx.lineTo(px, py);
+        }
+        ctx.stroke();
+      }
+
+      for (let bolt = 0; bolt < 3; bolt++) {
+        const base = performance.now() * 0.018 + bolt * 2.2 + entity.y * 0.01;
+        ctx.strokeStyle = `rgba(255,235,235,${0.85 * alpha})`;
+        ctx.lineWidth = 1.6;
+        ctx.beginPath();
+        for (let i = 0; i < 5; i++) {
+          const t = i / 4;
+          const ang = base + t * 0.85;
+          const radius = entity.r * (0.55 + t * 0.9);
+          const px = Math.cos(ang) * radius + Math.sin(base * 2 + i) * 3;
+          const py = Math.sin(ang) * radius + ((i % 2) ? -4 : 4);
+          if (i === 0) ctx.moveTo(px, py);
+          else ctx.lineTo(px, py);
+        }
+        ctx.stroke();
+      }
+
+      ctx.fillStyle = `rgba(255,245,245,${0.9 * alpha})`;
+      for (let spark = 0; spark < 5; spark++) {
+        const ang = performance.now() * 0.012 + spark * (Math.PI * 2 / 5) + entity.x * 0.02;
+        const radius = entity.r * (0.95 + 0.28 * Math.sin(performance.now() * 0.02 + spark));
+        ctx.beginPath();
+        ctx.arc(Math.cos(ang) * radius, Math.sin(ang) * radius * 0.8, 1.8 + (spark % 2), 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      ctx.restore();
+    }
+
+    // Draw trail points from dead stars
+    for (const t of starTrails) {
+      const alpha = (t.life / t.maxLife) * 0.7;
+      drawStarShape(t.x, t.y, t.r * (t.life / t.maxLife) * 0.7, t.angle, alpha);
+    }
+
+    // Draw trail points from live stars
+    for (const s of stars) {
+      for (let i = 0; i < s.trail.length; i++) {
+        const t = s.trail[i];
+        const alpha = (i / s.trail.length) * 0.7;
+        drawStarShape(t.x, t.y, s.r * (i / s.trail.length) * 0.7, t.angle, alpha);
+      }
+    }
+
+    // Draw live spinning stars
+    for (const s of stars) {
+      drawStarShape(s.x, s.y, s.r, s.angle, 1.0);
+    }
+
+    // Draw star poof explosions
+    for (const ex of starExplosions) {
+      const progress = 1 - ex.life / ex.maxLife;
+      for (const p of ex.particles) {
+        if (p.life <= 0) continue;
+        const alpha = (p.life / p.maxLife) * 0.9;
+        const dist = progress * p.speed * 40;
+        const px = ex.x + Math.cos(p.angle) * dist;
+        const py = ex.y + Math.sin(p.angle) * dist;
+        const pAngle = p.angle + progress * Math.PI * 3;
+        drawStarShape(px, py, p.r * (p.life / p.maxLife), pAngle, alpha);
+      }
+    }
+
+    // Draw char scorch marks (outlast the fire)
+    for (const ch of charPiles) {
+      if (ch.dead) continue;
+      const alpha = ch.holdLife > 0 ? 1.0 : (ch.fadeLife / ch.maxFadeLife);
+      const cx = ch.x;
+      const cy = ch.y;
+      const r = ch.r;
+      const bl = ch.blue;
+
+      ctx.save();
+      ctx.globalAlpha = alpha;
+
+      // Outer soft shadow haze
+      const hazeGrad = ctx.createRadialGradient(cx, cy, 0, cx, cy, r * 1.3);
+      hazeGrad.addColorStop(0,   bl ? "rgba(0,5,20,0.55)"  : "rgba(8,3,0,0.55)");
+      hazeGrad.addColorStop(0.6, bl ? "rgba(0,2,10,0.25)"  : "rgba(4,1,0,0.25)");
+      hazeGrad.addColorStop(1,   "rgba(0,0,0,0)");
+      ctx.fillStyle = hazeGrad;
+      ctx.beginPath();
+      ctx.ellipse(cx, cy, r * 1.3, r * 0.5, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Jagged scorch shape using pre-baked points
+      ctx.beginPath();
+      for (let i = 0; i < ch.points.length; i++) {
+        const p = ch.points[i];
+        const px = cx + Math.cos(p.angle) * r * p.rx;
+        const py = cy + Math.sin(p.angle) * r * p.ry;
+        i === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
+      }
+      ctx.closePath();
+      const scorch = ctx.createRadialGradient(cx, cy, 0, cx, cy, r);
+      if (bl) {
+        scorch.addColorStop(0,    "rgba(0,15,40,0.92)");
+        scorch.addColorStop(0.45, "rgba(0,8,25,0.75)");
+        scorch.addColorStop(0.8,  "rgba(0,3,12,0.45)");
+        scorch.addColorStop(1,    "rgba(0,0,0,0)");
+      } else {
+        scorch.addColorStop(0,    "rgba(20,8,0,0.92)");
+        scorch.addColorStop(0.45, "rgba(12,4,0,0.75)");
+        scorch.addColorStop(0.8,  "rgba(6,2,0,0.45)");
+        scorch.addColorStop(1,    "rgba(0,0,0,0)");
+      }
+      ctx.fillStyle = scorch;
+      ctx.fill();
+
+      // Inner cracked seams
+      ctx.strokeStyle = bl ? "rgba(30,80,160,0.35)" : "rgba(80,30,0,0.35)";
+      ctx.lineWidth = 1.2;
+      for (let i = 0; i < 3; i++) {
+        const p1 = ch.points[i * 3 % ch.points.length];
+        const p2 = ch.points[(i * 3 + 5) % ch.points.length];
+        ctx.beginPath();
+        ctx.moveTo(cx + Math.cos(p1.angle) * r * p1.rx * 0.5, cy + Math.sin(p1.angle) * r * p1.ry * 0.5);
+        ctx.lineTo(cx + Math.cos(p2.angle) * r * p2.rx * 0.4, cy + Math.sin(p2.angle) * r * p2.ry * 0.4);
+        ctx.stroke();
+      }
+
+      ctx.restore();
+    }
+
+    for (const pile of firePiles) {
+      const alpha = pile.life / pile.maxLife;
+      const t = performance.now() / 1000;
+      const flicker = 0.85 + 0.15 * Math.sin(t * 11 + pile.x);
+      const flicker2 = 0.85 + 0.15 * Math.sin(t * 7.3 + pile.x * 0.7);
+      const r = pile.r;
+      const cx = pile.x;
+      const cy = pile.y;
+      const bl = pile.blue;
+      const yc = pile.sourceYellow;
+
+      // Color palettes
+      const col = bl
+        ? { halo0: "80,160,255", halo1: "20,80,220", back: `rgba(20,80,200,${alpha*0.55})`, mid: `rgba(60,130,255,${alpha*0.85})`, center: `rgba(180,220,255,${alpha*0.95})`, core0: `rgba(220,240,255,${alpha*0.9})`, core1: `rgba(80,160,255,${alpha*0.75})`, core2: `rgba(20,60,200,${alpha*0.5})`, core3: `rgba(0,10,80,0)`, ember: "#60b0ff" }
+        : yc
+        ? { halo0: "255,240,80", halo1: "255,160,0", back: `rgba(255,200,20,${alpha*0.55})`, mid: `rgba(255,230,60,${alpha*0.85})`, center: `rgba(255,255,180,${alpha*0.95})`, core0: `rgba(255,255,220,${alpha*0.9})`, core1: `rgba(255,200,80,${alpha*0.75})`, core2: `rgba(220,80,10,${alpha*0.5})`, core3: `rgba(100,20,0,0)`, ember: "#ffe060" }
+        : { halo0: "255,180,60", halo1: "220,80,10", back: `rgba(200,60,10,${alpha*0.55})`, mid: `rgba(255,110,20,${alpha*0.85})`, center: `rgba(255,220,100,${alpha*0.95})`, core0: `rgba(255,255,220,${alpha*0.9})`, core1: `rgba(255,200,80,${alpha*0.75})`, core2: `rgba(220,80,10,${alpha*0.5})`, core3: `rgba(100,20,0,0)`, ember: "#ffb040" };
+
+      // Outer glow halo
+      ctx.save();
+      const haloGrad = ctx.createRadialGradient(cx, cy - r * 0.3, 0, cx, cy - r * 0.3, r * 2.4 * flicker);
+      haloGrad.addColorStop(0,   `rgba(${col.halo0},${alpha * 0.18 * flicker})`);
+      haloGrad.addColorStop(0.5, `rgba(${col.halo1},${alpha * 0.10})`);
+      haloGrad.addColorStop(1,   `rgba(0,0,0,0)`);
+      ctx.fillStyle = haloGrad;
+      ctx.beginPath();
+      ctx.ellipse(cx, cy - r * 0.3, r * 2.4 * flicker, r * 2.0 * flicker, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+
+      // Draw a flame tongue helper
+      function flameTongue(ox, tiltX, height, widthMult, a) {
+        ctx.save();
+        ctx.globalAlpha = a;
+        ctx.beginPath();
+        ctx.moveTo(cx + ox - r * widthMult * 0.5, cy + 3);
+        ctx.bezierCurveTo(
+          cx + ox - r * widthMult * 0.6, cy - height * 0.4,
+          cx + ox + tiltX - r * widthMult * 0.1, cy - height * 0.75,
+          cx + ox + tiltX,                         cy - height
+        );
+        ctx.bezierCurveTo(
+          cx + ox + tiltX + r * widthMult * 0.1, cy - height * 0.75,
+          cx + ox + r * widthMult * 0.6,          cy - height * 0.4,
+          cx + ox + r * widthMult * 0.5,          cy + 3
+        );
+        ctx.closePath();
+        ctx.fill();
+        ctx.restore();
+      }
+
+      ctx.fillStyle = col.back;
+      flameTongue(-r * 0.45, -r * 0.1, r * 1.5 * flicker2, 0.5, alpha * 0.7);
+      flameTongue( r * 0.45,  r * 0.1, r * 1.4 * flicker,  0.5, alpha * 0.7);
+      ctx.fillStyle = col.mid;
+      flameTongue(-r * 0.25,  r * 0.05, r * 1.9 * flicker,  0.45, alpha * 0.85);
+      flameTongue( r * 0.25, -r * 0.05, r * 1.7 * flicker2, 0.45, alpha * 0.85);
+      ctx.fillStyle = col.center;
+      flameTongue(0, r * 0.03 * Math.sin(t * 9), r * 2.1 * flicker, 0.35, alpha * 0.95);
+
+      // Hot core ember glow
+      ctx.save();
+      const coreGrad = ctx.createRadialGradient(cx, cy, 0, cx, cy, r * 0.95);
+      coreGrad.addColorStop(0,   col.core0);
+      coreGrad.addColorStop(0.3, col.core1);
+      coreGrad.addColorStop(0.7, col.core2);
+      coreGrad.addColorStop(1,   col.core3);
+      ctx.fillStyle = coreGrad;
+      ctx.beginPath();
+      ctx.ellipse(cx, cy, r * 0.95, r * 0.6, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+
+      // Floating embers
+      ctx.save();
+      for (let e = 0; e < 4; e++) {
+        const et = t * (1.2 + e * 0.4) + e * 1.7 + pile.x * 0.01;
+        const ex2 = cx + Math.sin(et * 2.1) * r * 0.6 + (e - 1.5) * r * 0.3;
+        const ey = cy - r * 0.4 - (et % 1.8) * r * 1.4;
+        const ea = Math.max(0, (1 - (et % 1.8) / 1.8)) * alpha * 0.9;
+        if (ea <= 0) continue;
+        ctx.globalAlpha = ea;
+        ctx.fillStyle = col.ember;
+        ctx.beginPath();
+        ctx.arc(ex2, ey, 2.2, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.restore();
+    }
+
+    // Blue pile popcorn burst animation
+    for (const bx of bluePileExplosions) {
+      const progress = 1 - bx.life / bx.maxLife;
+      const ringAlpha = (bx.life / bx.maxLife) * 0.7;
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(bx.x, bx.y, bx.ring.r, 0, Math.PI * 2);
+      ctx.strokeStyle = `rgba(100,180,255,${ringAlpha})`;
+      ctx.lineWidth = 3.5 * (1 - progress);
+      ctx.stroke();
+      ctx.restore();
+      for (const s of bx.sparks) {
+        if (s.life <= 0) continue;
+        const a = s.life / s.maxLife * 0.9;
+        ctx.save();
+        ctx.globalAlpha = a;
+        ctx.fillStyle = Math.random() < 0.5 ? "#80cfff" : "#ffffff";
+        ctx.beginPath();
+        ctx.arc(s.x, s.y, s.r * (s.life / s.maxLife), 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      }
+      for (const p of bx.poppers) {
+        if (p.spawned || p.life <= 0) continue;
+        const a = p.life / p.maxLife;
+        const sz = 10 * a;
+        ctx.save();
+        ctx.globalAlpha = a;
+        const grad = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, sz * 2);
+        grad.addColorStop(0,   `rgba(255,200,80,${a * 0.8})`);
+        grad.addColorStop(0.4, `rgba(255,100,20,${a * 0.5})`);
+        grad.addColorStop(1,   "rgba(0,0,0,0)");
+        ctx.fillStyle = grad;
+        ctx.beginPath(); ctx.arc(p.x, p.y, sz * 2, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = "#ffe090";
+        ctx.beginPath(); ctx.arc(p.x, p.y, sz, 0, Math.PI * 2); ctx.fill();
+        ctx.restore();
+      }
+    }
+
+    for (const ex of firePoofs) {
+      const progress = 1 - ex.life / ex.maxLife;
+      for (const p of ex.particles) {
+        if (p.life <= 0) continue;
+        const alpha = (p.life / p.maxLife) * 0.9;
+        const dist = progress * p.speed * 26;
+        const px = ex.x + Math.cos(p.angle) * dist;
+        const py = ex.y + Math.sin(p.angle) * dist;
+        const grad = ctx.createRadialGradient(px, py, 0, px, py, p.r);
+        if (ex.blue) {
+          grad.addColorStop(0, `rgba(200,240,255,${alpha})`);
+          grad.addColorStop(0.45, `rgba(60,140,255,${alpha * 0.9})`);
+          grad.addColorStop(1, `rgba(0,40,180,0)`);
+        } else {
+          grad.addColorStop(0, `rgba(255,240,180,${alpha})`);
+          grad.addColorStop(0.45, `rgba(255,150,60,${alpha * 0.9})`);
+          grad.addColorStop(1, `rgba(180,40,0,0)`);
+        }
+        ctx.fillStyle = grad;
+        ctx.beginPath();
+        ctx.arc(px, py, p.r * (p.life / p.maxLife), 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+
+    // Last Stand explosion draw
+    for (const lx of lastStandExplosions) {
+      const progress = 1 - lx.life / lx.maxLife;
+      const alpha = lx.life / lx.maxLife;
+
+      // Expanding ring
+      ctx.save();
+      ctx.globalAlpha = alpha * 0.85;
+      ctx.strokeStyle = lx.blue ? `rgba(80,160,255,${alpha})` : `rgba(255,120,30,${alpha})`;
+      ctx.lineWidth = 5 * alpha;
+      ctx.shadowColor = lx.blue ? "#40a0ff" : "#ff6010";
+      ctx.shadowBlur = 14;
+      ctx.beginPath();
+      ctx.arc(lx.x, lx.y, lx.ringR, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.restore();
+
+      // Burst particles
+      for (const p of lx.particles) {
+        if (p.life <= 0) continue;
+        const pAlpha = (p.life / p.maxLife) * 0.9;
+        const dist = progress * p.speed * 30;
+        const px = lx.x + Math.cos(p.angle) * dist;
+        const py = lx.y + Math.sin(p.angle) * dist;
+        const pR = p.r * (p.life / p.maxLife);
+        const grad = ctx.createRadialGradient(px, py, 0, px, py, pR);
+        if (lx.blue) {
+          grad.addColorStop(0, `rgba(220,240,255,${pAlpha})`);
+          grad.addColorStop(0.4, `rgba(60,130,255,${pAlpha * 0.85})`);
+          grad.addColorStop(1, `rgba(0,40,180,0)`);
+        } else {
+          grad.addColorStop(0, `rgba(255,250,200,${pAlpha})`);
+          grad.addColorStop(0.4, `rgba(255,140,20,${pAlpha * 0.85})`);
+          grad.addColorStop(1, `rgba(180,40,0,0)`);
+        }
+        ctx.fillStyle = grad;
+        ctx.beginPath();
+        ctx.arc(px, py, pR, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      // Central flash
+      ctx.save();
+      ctx.globalAlpha = alpha * 0.7 * (1 - progress);
+      const flashGrad = ctx.createRadialGradient(lx.x, lx.y, 0, lx.x, lx.y, lx.r * 0.5);
+      flashGrad.addColorStop(0, "rgba(255,255,255,1)");
+      flashGrad.addColorStop(0.4, lx.blue ? "rgba(100,180,255,0.6)" : "rgba(255,160,60,0.6)");
+      flashGrad.addColorStop(1, "rgba(0,0,0,0)");
+      ctx.fillStyle = flashGrad;
+      ctx.beginPath();
+      ctx.arc(lx.x, lx.y, lx.r * 0.5, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+
+    // Lightning burst draw (electric enemy death effect)
+    for (const burst of lightningBursts) {
+      const alpha = burst.life / burst.maxLife;
+      const progress = 1 - alpha;
+      const expandR = burst.r * (0.4 + 0.6 * progress);
+
+      ctx.save();
+      ctx.translate(burst.x, burst.y);
+
+      // Outer glow halo
+      const halo = ctx.createRadialGradient(0, 0, 0, 0, 0, expandR * 1.5);
+      halo.addColorStop(0, `rgba(255,180,220,${alpha * 0.55})`);
+      halo.addColorStop(0.5, `rgba(255,80,140,${alpha * 0.25})`);
+      halo.addColorStop(1, `rgba(180,20,60,0)`);
+      ctx.fillStyle = halo;
+      ctx.beginPath();
+      ctx.arc(0, 0, expandR * 1.5, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Inner core flash
+      ctx.save();
+      ctx.globalAlpha = alpha * 0.7;
+      ctx.fillStyle = "#ffffff";
+      ctx.shadowColor = "#ff4488";
+      ctx.shadowBlur = 14;
+      ctx.beginPath();
+      ctx.arc(0, 0, expandR * 0.28, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+
+      // Jagged lightning bolts
+      for (const bolt of burst.bolts) {
+        const bAlpha = alpha * (0.7 + 0.3 * Math.sin(burst.life * 1.8 + bolt.angle));
+        ctx.save();
+        ctx.globalAlpha = bAlpha;
+        ctx.strokeStyle = "#ff80b0";
+        ctx.shadowColor = "#ff2266";
+        ctx.shadowBlur = 8;
+        ctx.lineWidth = 2.2;
+        ctx.lineCap = "round";
+        ctx.lineJoin = "round";
+
+        const bLen = bolt.len * (0.5 + 0.5 * progress);
+        const endX = Math.cos(bolt.angle) * bLen;
+        const endY = Math.sin(bolt.angle) * bLen;
+        const kinkX = Math.cos(bolt.angle + bolt.kink) * bLen * 0.5;
+        const kinkY = Math.sin(bolt.angle + bolt.kink) * bLen * 0.5;
+        const kink2X = Math.cos(bolt.angle - bolt.kink * 0.4) * bLen * 0.75;
+        const kink2Y = Math.sin(bolt.angle - bolt.kink * 0.4) * bLen * 0.75;
+
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.lineTo(kinkX, kinkY);
+        ctx.lineTo(kink2X, kink2Y);
+        ctx.lineTo(endX, endY);
+        ctx.stroke();
+
+        // Bright white inner bolt
+        ctx.strokeStyle = "#ffccdd";
+        ctx.lineWidth = 1;
+        ctx.shadowBlur = 0;
+        ctx.stroke();
+        ctx.restore();
+      }
+
+      // Spark particles at bolt tips
+      ctx.save();
+      ctx.globalAlpha = alpha * 0.85;
+      for (const bolt of burst.bolts) {
+        const bLen = bolt.len * (0.5 + 0.5 * progress);
+        const tipX = Math.cos(bolt.angle) * bLen;
+        const tipY = Math.sin(bolt.angle) * bLen;
+        ctx.fillStyle = "#ff90c0";
+        ctx.shadowColor = "#ff2266";
+        ctx.shadowBlur = 6;
+        ctx.beginPath();
+        ctx.arc(tipX, tipY, 2.5 * alpha, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.restore();
+
+      ctx.restore();
+    }
+
+    for (const e of enemies) {
+      ctx.save();
+      ctx.translate(e.x, e.y);
+
+      ctx.fillStyle = e.burning ? "#ff5522" : "#ff9933";
+      ctx.beginPath();
+      ctx.arc(0, 0, e.r, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.fillStyle = "#ffe0c0";
+      ctx.beginPath();
+      ctx.arc(0, 4, e.r * 0.65, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.fillStyle = "#3b1b00";
+      ctx.beginPath();
+      ctx.arc(-6, -4, 4, 0, Math.PI * 2);
+      ctx.arc(6, -4, 4, 0, Math.PI * 2);
+      ctx.fill();
+
+      if (e.burning) {
+        ctx.fillStyle = "rgba(255,200,80,0.6)";
+        ctx.beginPath();
+        ctx.arc(0, -e.r * 0.2, e.r * 0.9, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      drawElectrifiedCue(e);
+
+      ctx.restore();
+    }
+
+    for (const f of flyers) {
+      ctx.save();
+      ctx.translate(f.x, f.y);
+
+      ctx.fillStyle = "#cc3355";
+      ctx.beginPath();
+      ctx.arc(0, 0, f.r, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.fillStyle = "rgba(180,180,180,0.4)";
+      ctx.beginPath();
+      ctx.ellipse(-f.r * 1.4, 0, f.r * 0.9, f.r * 0.5, -0.4, 0, Math.PI * 2);
+      ctx.ellipse(f.r * 1.4, 0, f.r * 0.9, f.r * 0.5, 0.4, 0, Math.PI * 2);
+      ctx.fill();
+
+      if (f.burning) {
+        ctx.fillStyle = "rgba(255,200,80,0.6)";
+        ctx.beginPath();
+        ctx.arc(0, -f.r * 0.15, f.r * 0.9, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      drawElectrifiedCue(f);
+
+      ctx.restore();
+    }
+
+    for (const sk of sirKibbles) {
+      if (!sk.alive) continue;
+      ctx.save();
+      ctx.translate(sk.x, sk.y);
+
+      ctx.fillStyle = "#f4d13b";
+      ctx.beginPath();
+      ctx.arc(0, -6, sk.r, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.fillStyle = "#222222";
+      ctx.beginPath();
+      ctx.ellipse(0, -6, sk.r * 0.6, sk.r * 0.5, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.fillStyle = "#ff4444";
+      ctx.beginPath();
+      ctx.ellipse(-sk.r * 0.7, 4, 8, 10, 0.2, 0, Math.PI * 2);
+      ctx.ellipse(sk.r * 0.7, 4, 8, 10, -0.2, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.fillStyle = "#3b2f1f";
+      ctx.beginPath();
+      ctx.ellipse(0, sk.r * 0.6, sk.r * 0.7, sk.r * 0.4, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      if (sk.burning) {
+        ctx.fillStyle = "rgba(255,200,80,0.6)";
+        ctx.beginPath();
+        ctx.arc(0, -sk.r * 0.2, sk.r * 0.9, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      drawElectrifiedCue(sk);
+
+      ctx.restore();
+    }
+
+    for (const h of helpers) {
+      ctx.save();
+
+      if (h.special && h.trail) {
+        for (const t of h.trail) {
+          const alpha = t.life / 40;
+          const radius = 28;
+          const grad = ctx.createRadialGradient(t.x, t.y, 0, t.x, t.y, radius);
+          grad.addColorStop(0, `rgba(255,255,255,${alpha * 0.8})`);
+          grad.addColorStop(0.35, `rgba(220,120,160,${alpha * 0.8})`);
+          grad.addColorStop(0.7, `rgba(160,20,60,${alpha * 0.9})`);
+          grad.addColorStop(1, `rgba(80,0,20,${alpha * 0.9})`);
+          ctx.fillStyle = grad;
+          ctx.beginPath();
+          ctx.arc(t.x, t.y, radius, 0, Math.PI * 2);
+          ctx.fill();
+          t.life--;
+        }
+        h.trail = h.trail.filter(t => t.life > 0);
+      }
+
+      ctx.translate(h.x, h.y);
+
+      if (h.yellow) ctx.fillStyle = "#ffd93b";
+      else ctx.fillStyle = h.special ? "#ff2244" : "#aa1122";
+      ctx.beginPath();
+      ctx.arc(0, 0, h.r, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.fillStyle = "#771111";
+      ctx.beginPath();
+      ctx.arc(-6, h.r - 4, 4, 0, Math.PI * 2);
+      ctx.arc(6, h.r - 4, 4, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.fillStyle = "#552222";
+      ctx.fillRect(-4, -10, 8, 10);
+
+      if (h.special && h.spikes > 0) {
+        const baseR = h.r + h.r * 0.2;
+        const spikeR = baseR + (h.r * 0.5 * 2);
+        const now = performance.now() / 2000;
+        for (let i = 0; i < h.spikes; i++) {
+          const angle = now * 2 * Math.PI + (i * 2 * Math.PI) / 3;
+
+          const tipX = Math.cos(angle) * spikeR;
+          const tipY = Math.sin(angle) * spikeR;
+
+          const baseX1 = Math.cos(angle + 0.4) * baseR;
+          const baseY1 = Math.sin(angle + 0.4) * baseR;
+          const baseX2 = Math.cos(angle - 0.4) * baseR;
+          const baseY2 = Math.sin(angle - 0.4) * baseR;
+
+          ctx.fillStyle = "#ffb000";
+          ctx.beginPath();
+          ctx.moveTo(baseX1, baseY1);
+          ctx.lineTo(baseX2, baseY2);
+          ctx.lineTo(tipX, tipY);
+          ctx.closePath();
+          ctx.fill();
+        }
+      }
+
+      ctx.restore();
+    }
+
+    for (const p of fireParticles) {
+      const alpha = p.life / p.maxLife;
+      let rgb;
+      if (p.helperKind === "yellow") rgb = "255,225,75";
+      else if (p.color === "red") rgb = "235,70,55";
+      else rgb = "255,145,45";
+      const size = p.sourceHelper ? 3.6 : 4;
+      ctx.fillStyle = `rgba(${rgb},${alpha})`;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, size, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    for (const fb of specialFireballs) {
+      if (fb.dead) continue;
+
+      if (fb.trail) {
+        for (const tr of fb.trail) {
+          const a = tr.life / tr.maxLife;
+          ctx.fillStyle = `rgba(255,105,40,${a * 0.22})`;
+          ctx.beginPath();
+          ctx.arc(tr.x, tr.y, tr.r * (0.45 + a * 0.3), 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+
+      const pulseR = fb.r + Math.sin(fb.pulse || 0) * 3;
+      ctx.save();
+      ctx.translate(fb.x, fb.y);
+      ctx.rotate(fb.spin || 0);
+
+      const grad = ctx.createRadialGradient(0, 0, 3, 0, 0, pulseR);
+      grad.addColorStop(0, "#fff0a0");
+      grad.addColorStop(0.38, "#ff9f24");
+      grad.addColorStop(1, "#661300");
+      ctx.fillStyle = grad;
+      ctx.beginPath();
+      ctx.arc(0, 0, pulseR, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.strokeStyle = "rgba(255,230,130,0.75)";
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      ctx.moveTo(-pulseR * 0.85, 0);
+      ctx.lineTo(pulseR * 0.85, 0);
+      ctx.moveTo(0, -pulseR * 0.85);
+      ctx.lineTo(0, pulseR * 0.85);
+      ctx.stroke();
+
+      ctx.restore();
+
+      for (const pt of fb.particles) {
+        const alpha = pt.life / 18;
+        let rgb;
+        if (pt.color === "deepYellow") rgb = "255,215,75";
+        else if (pt.color === "deepOrange") rgb = "255,125,45";
+        else rgb = "190,40,25";
+        ctx.fillStyle = `rgba(${rgb},${alpha})`;
+        ctx.beginPath();
+        ctx.arc(pt.x, pt.y, fb.r / 4, 0, Math.PI * 2);
+        ctx.fill();
+        pt.life--;
+      }
+      fb.particles = fb.particles.filter(pt => pt.life > 0);
+    }
+
+    for (const hb of helperFireballs) {
+      if (hb.dead) continue;
+
+      const yellow = hb.helperKind === "yellow";
+
+      if (hb.trail) {
+        for (const tr of hb.trail) {
+          const a = tr.life / tr.maxLife;
+          ctx.fillStyle = yellow ? `rgba(255,235,80,${a * 0.28})` : `rgba(255,100,55,${a * 0.24})`;
+          ctx.beginPath();
+          ctx.arc(tr.x, tr.y, tr.r * (0.55 + a * 0.22), 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+
+      const pulseR = hb.r + Math.sin(hb.pulse || 0) * 1.8;
+      ctx.save();
+      ctx.translate(hb.x, hb.y);
+      ctx.rotate(hb.spin || 0);
+
+      const grad = ctx.createRadialGradient(0, 0, 2, 0, 0, pulseR);
+      if (yellow) {
+        grad.addColorStop(0, "#fffbe0");
+        grad.addColorStop(0.45, "#ffe84d");
+        grad.addColorStop(1, "#a85c00");
+      } else {
+        grad.addColorStop(0, "#ffe0b0");
+        grad.addColorStop(0.45, "#ff743d");
+        grad.addColorStop(1, "#4d0900");
+      }
+      ctx.fillStyle = grad;
+      ctx.beginPath();
+      ctx.arc(0, 0, pulseR, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.strokeStyle = yellow ? "rgba(255,255,180,0.75)" : "rgba(255,190,130,0.65)";
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(-pulseR * 0.72, 0);
+      ctx.lineTo(pulseR * 0.72, 0);
+      ctx.stroke();
+
+      ctx.restore();
+
+      for (const pt of hb.particles) {
+        const alpha = pt.life / 12;
+        ctx.fillStyle = `rgba(${pt.rgb},${alpha})`;
+        ctx.beginPath();
+        ctx.arc(pt.x, pt.y, hb.r / 4, 0, Math.PI * 2);
+        ctx.fill();
+        pt.life--;
+      }
+      hb.particles = hb.particles.filter(pt => pt.life > 0);
+    }
+
+    for (const blast of helperDeathBlasts) {
+      const t = 1 - blast.life / blast.maxLife;
+      const alpha = blast.life / blast.maxLife;
+      const radius = Math.max(4, blast.r * t);
+
+      ctx.save();
+      ctx.globalCompositeOperation = "lighter";
+
+      ctx.strokeStyle = blast.special
+        ? `rgba(255,185,70,${alpha})`
+        : (blast.sourceYellow ? `rgba(255,240,95,${alpha})` : `rgba(255,115,45,${alpha})`);
+      ctx.lineWidth = blast.special ? 5 : 4;
+      ctx.beginPath();
+      ctx.arc(blast.x, blast.y, radius, 0, Math.PI * 2);
+      ctx.stroke();
+
+      ctx.fillStyle = blast.special
+        ? `rgba(255,95,30,${alpha * 0.18})`
+        : (blast.sourceYellow ? `rgba(255,230,80,${alpha * 0.18})` : `rgba(255,75,30,${alpha * 0.16})`);
+      ctx.beginPath();
+      ctx.arc(blast.x, blast.y, radius * 0.82, 0, Math.PI * 2);
+      ctx.fill();
+
+      for (const spark of blast.sparks) {
+        if (spark.life <= 0) continue;
+        const sa = spark.life / spark.maxLife;
+        ctx.fillStyle = blast.sourceYellow ? `rgba(255,245,120,${sa})` : `rgba(255,130,45,${sa})`;
+        ctx.beginPath();
+        ctx.arc(spark.x, spark.y, spark.r, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      ctx.restore();
+    }
+
+    for (const ex of helperExplosions) {
+      const baseAlpha = ex.life / ex.maxLife;
+      for (const p of ex.particles) {
+        if (p.life <= 0) continue;
+        const t = 1 - p.life / p.maxLife;
+        const r = ex.radius * (0.6 + 0.6 * t);
+        const alpha = baseAlpha * (p.life / p.maxLife);
+        const px = ex.x + Math.cos(p.angle) * p.speed * (1 + t * 6);
+        const py = ex.y + Math.sin(p.angle) * p.speed * (1 + t * 6);
+        ctx.fillStyle = `rgba(180,140,100,${alpha * 0.7})`;
+        ctx.beginPath();
+        ctx.arc(px, py, r * 0.15, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+
+    for (const ex of specialExplosions) {
+      const baseAlpha = ex.life / ex.maxLife;
+      for (const p of ex.particles) {
+        if (p.life <= 0) continue;
+        const t = 1 - p.life / p.maxLife;
+        const r = ex.radius * (0.7 + 0.5 * t);
+        const alpha = baseAlpha * (p.life / p.maxLife);
+        const px = ex.x + Math.cos(p.angle) * p.speed * (1 + t * 4);
+        const py = ex.y + Math.sin(p.angle) * p.speed * (1 + t * 4);
+        ctx.fillStyle = `rgba(255,200,120,${alpha * 0.8})`;
+        ctx.beginPath();
+        ctx.arc(px, py, r * 0.2, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+
+    for (const ball of lightningBalls) {
+      const alpha = ball.life / ball.maxLife;
+      const pulse = 0.88 + 0.14 * Math.sin(ball.pulse);
+      const outerR = ball.r * 1.42 * pulse;
+
+      ctx.save();
+      ctx.globalCompositeOperation = "lighter";
+
+      const grad = ctx.createRadialGradient(ball.x, ball.y, 0, ball.x, ball.y, outerR);
+      grad.addColorStop(0, `rgba(255,245,255,${0.95 * alpha})`);
+      grad.addColorStop(0.22, `rgba(255,150,220,${0.9 * alpha})`);
+      grad.addColorStop(0.58, `rgba(235,40,115,${0.58 * alpha})`);
+      grad.addColorStop(1, `rgba(90,0,45,0)`);
+      ctx.fillStyle = grad;
+      ctx.beginPath();
+      ctx.arc(ball.x, ball.y, outerR, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.strokeStyle = `rgba(255,210,245,${0.9 * alpha})`;
+      ctx.lineWidth = 2.4;
+      for (let i = 0; i < 7; i++) {
+        const a = ball.pulse * 1.7 + i * (Math.PI * 2 / 7);
+        const r1 = ball.r * (0.22 + 0.08 * Math.sin(ball.pulse + i));
+        const r2 = ball.r * (1.12 + 0.18 * Math.cos(ball.pulse * 1.3 + i));
+        const midA = a + Math.sin(ball.pulse + i) * 0.35;
+        ctx.beginPath();
+        ctx.moveTo(ball.x + Math.cos(a) * r1, ball.y + Math.sin(a) * r1);
+        ctx.lineTo(ball.x + Math.cos(midA) * ((r1 + r2) * 0.55), ball.y + Math.sin(midA) * ((r1 + r2) * 0.55));
+        ctx.lineTo(ball.x + Math.cos(a + 0.22) * r2, ball.y + Math.sin(a + 0.22) * r2);
+        ctx.stroke();
+      }
+
+      ctx.fillStyle = `rgba(255,250,255,${0.75 * alpha})`;
+      ctx.beginPath();
+      ctx.arc(ball.x, ball.y, ball.r * 0.28 * pulse, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.restore();
+    }
+
+    for (const sw of shockwaves) {
+      const alpha = sw.life / sw.maxLife;
+      const grad = ctx.createLinearGradient(sw.x - sw.r * 2, sw.y, sw.x + sw.r * 2, sw.y);
+      grad.addColorStop(0, `rgba(255,0,0,0)`);
+      grad.addColorStop(0.5, `rgba(255,180,180,${0.95 * alpha})`);
+      grad.addColorStop(1, `rgba(255,0,0,0)`);
+      ctx.strokeStyle = grad;
+      ctx.lineWidth = 10;
+      ctx.beginPath();
+      ctx.moveTo(sw.x - sw.r * 1.4, sw.y);
+      ctx.lineTo(sw.x + sw.r * 1.4, sw.y);
+      ctx.stroke();
+    }
+
+    for (const br of boomerangs) {
+      if (br.caught) continue;
+
+      if (br.trail) {
+        for (const t of br.trail) {
+          const alpha = t.life / t.maxLife;
+          ctx.fillStyle = `rgba(180,180,180,${alpha})`;
+          ctx.beginPath();
+          ctx.arc(t.x, t.y, 4, 0, Math.PI * 2);
+          ctx.fill();
+          t.life--;
+        }
+        br.trail = br.trail.filter(t => t.life > 0);
+      }
+
+      ctx.save();
+      ctx.translate(br.x, br.y);
+      ctx.rotate(br.angle);
+      const grad = ctx.createLinearGradient(-22, 0, 22, 0);
+      grad.addColorStop(0, "#fff7a0");
+      grad.addColorStop(0.5, "#ffd040");
+      grad.addColorStop(1, "#ff8c20");
+      ctx.strokeStyle = grad;
+      ctx.lineWidth = 14;
+      ctx.lineCap = "round";
+      ctx.beginPath();
+      ctx.arc(0, 0, 22, -Math.PI * 0.3, Math.PI * 0.3);
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    // ---- SWORD KILL STAR EXPLOSIONS ----
+    for (const ex of swordKillExplosions) {
+      const prog = 1 - ex.life / ex.maxLife;
+      for (const p of ex.particles) {
+        if (p.life <= 0) continue;
+        const a = p.life / p.maxLife;
+        const d = prog * p.speed * 38;
+        const px = ex.x + Math.cos(p.angle) * d;
+        const py = ex.y + Math.sin(p.angle) * d;
+        const sr = p.r * a;
+        const sa = p.spin + prog * Math.PI * 5;
+        ctx.save();
+        ctx.globalAlpha = a;
+        ctx.translate(px, py);
+        ctx.rotate(sa);
+        // Star shape
+        ctx.fillStyle = "#ffe96b";
+        ctx.shadowColor = "#fff";
+        ctx.shadowBlur = 6;
+        ctx.beginPath();
+        for (let i = 0; i < 5; i++) {
+          const ang = (i * 2 * Math.PI / 5) - Math.PI / 2;
+          const x1 = Math.cos(ang) * sr, y1 = Math.sin(ang) * sr;
+          const x2 = Math.cos(ang + Math.PI/5) * sr * 0.45, y2 = Math.sin(ang + Math.PI/5) * sr * 0.45;
+          i === 0 ? ctx.moveTo(x1,y1) : ctx.lineTo(x1,y1);
+          ctx.lineTo(x2,y2);
+        }
+        ctx.closePath();
+        ctx.fill();
+        ctx.restore();
+      }
+    }
+
+    // ---- SWORD DRAW ----
+    if (sword.active || sword.trailSlices.length > 0) {
+      const liveOvercharged = isSwordOvercharged();
+      const reachMult = upgrades.metaReach ? 1.5 : 1.0;
+      const swordLen = player.r * 5 * (liveOvercharged ? 1.5 : 1) * reachMult;
+      const hiltLen  = player.r * 1.1;
+      const liveProgress = sword.active
+        ? ((upgrades.metaJab ? 8 : 15) - sword.timer) / (upgrades.metaJab ? 8 : 15)
+        : 1;
+      const liveAngle = swordBladeAngle(sword.type, sword.facing, liveProgress);
+
+      // ---- TRAIL ----
+      for (let si = 1; si < sword.trailSlices.length; si++) {
+        const sliceA = sword.trailSlices[si - 1];
+        const sliceB = sword.trailSlices[si];
+        const ageFrac = sliceB.life / sliceB.maxLife;
+        if (ageFrac <= 0) continue;
+        for (let seg = 0; seg < sliceA.points.length - 1; seg++) {
+          const t = seg / (sliceA.points.length - 1);
+          const bladeFade = (1 - t * 0.7) * ageFrac;
+          // Glow pass
+          ctx.save();
+          ctx.globalAlpha = bladeFade * 0.28;
+          ctx.shadowColor = sliceB.overcharged ? "#ff4a4a" : "#60b8ff";
+          ctx.shadowBlur = sliceB.overcharged ? 18 : 14;
+          ctx.fillStyle = sliceB.overcharged ? "#ff8f8f" : "#a0d8ff";
+          ctx.beginPath();
+          ctx.moveTo(sliceA.points[seg].x,   sliceA.points[seg].y);
+          ctx.lineTo(sliceA.points[seg+1].x, sliceA.points[seg+1].y);
+          ctx.lineTo(sliceB.points[seg+1].x, sliceB.points[seg+1].y);
+          ctx.lineTo(sliceB.points[seg].x,   sliceB.points[seg].y);
+          ctx.closePath();
+          ctx.fill();
+          ctx.restore();
+          // Core pass
+          ctx.save();
+          ctx.globalAlpha = bladeFade * 0.52;
+          ctx.fillStyle = sliceB.overcharged ? "#ffd5d5" : "#e8f6ff";
+          ctx.beginPath();
+          ctx.moveTo(sliceA.points[seg].x,   sliceA.points[seg].y);
+          ctx.lineTo(sliceA.points[seg+1].x, sliceA.points[seg+1].y);
+          ctx.lineTo(sliceB.points[seg+1].x, sliceB.points[seg+1].y);
+          ctx.lineTo(sliceB.points[seg].x,   sliceB.points[seg].y);
+          ctx.closePath();
+          ctx.fill();
+          ctx.restore();
+        }
+      }
+
+      // ---- LIVE SWORD ----
+      if (sword.active) {
+        // Hand world position — this is where the POMMEL sits (bottom of handle)
+        const sizeBoostDraw = player.hasEnemy ? 1.25 : 1.0;
+        const handDX = player.facing >= 0 ? 18 * sizeBoostDraw : -18 * sizeBoostDraw;
+        const handDY = player.hover ? -2 : 2;
+        const pivotX = player.x + handDX;
+        const pivotY = player.y + handDY;
+
+        ctx.save();
+        ctx.translate(pivotX, pivotY);
+        // local +Y = blade direction (outward from hand toward tip)
+        ctx.rotate(liveAngle - Math.PI / 2);
+
+        // Layout in local +Y space (all positive, outward from hand):
+        // y=0          → pommel (in hand)
+        // y=0 to hL    → hilt/grip
+        // y=hL         → guard
+        // y=hL to hL+bL→ blade, tip at hL+bL
+
+        const bL = swordLen;
+        const hL = hiltLen;
+        const gY = hL;        // guard sits at y=hL
+        const tipY = hL + bL; // blade tip
+
+        // ---- POMMEL ----
+        ctx.fillStyle = liveOvercharged ? "#7a0f14" : "#1a3a88";
+        ctx.beginPath(); ctx.ellipse(0, 0, 9, 7, 0, 0, Math.PI*2); ctx.fill();
+        const pomG = ctx.createRadialGradient(-2, -2, 1, 0, 0, 8);
+        pomG.addColorStop(0,   liveOvercharged ? "#ffd6d6" : "#c0d8ff");
+        pomG.addColorStop(0.45,liveOvercharged ? "#ff5a5a" : "#4070cc");
+        pomG.addColorStop(1,   liveOvercharged ? "#5a0e18" : "#0e2255");
+        ctx.fillStyle = pomG;
+        ctx.beginPath(); ctx.ellipse(0, 0, 8, 6, 0, 0, Math.PI*2); ctx.fill();
+        ctx.save(); ctx.globalAlpha = 0.5; ctx.fillStyle = "white";
+        ctx.beginPath(); ctx.ellipse(-2, -2, 3.5, 2, -0.4, 0, Math.PI*2); ctx.fill();
+        ctx.restore();
+
+        // ---- HILT / GRIP ----
+        // Dark shell
+        ctx.fillStyle = liveOvercharged ? "#4a0b0f" : "#0c1e55";
+        ctx.beginPath(); ctx.roundRect(-8, 0, 16, hL + 2, 4); ctx.fill();
+        // Blue grip gradient
+        const hiltG = ctx.createLinearGradient(-7, 0, 7, 0);
+        if (liveOvercharged) {
+          hiltG.addColorStop(0,   "#5a1117");
+          hiltG.addColorStop(0.3, "#b61f2a");
+          hiltG.addColorStop(0.55,"#ff4d4d");
+          hiltG.addColorStop(0.75,"#9a121d");
+          hiltG.addColorStop(1,   "#5a1117");
+        } else {
+          hiltG.addColorStop(0,   "#162866");
+          hiltG.addColorStop(0.3, "#3a70d8");
+          hiltG.addColorStop(0.55,"#5090ee");
+          hiltG.addColorStop(0.75,"#2a58b8");
+          hiltG.addColorStop(1,   "#162866");
+        }
+        ctx.fillStyle = hiltG;
+        ctx.beginPath(); ctx.roundRect(-7, 2, 14, hL - 2, 3); ctx.fill();
+        // Wrap bands
+        for (let i = 0; i < 4; i++) {
+          const by = 4 + (hL - 6) / 5 * (i + 1);
+          ctx.strokeStyle = "rgba(0,0,0,0.3)";
+          ctx.lineWidth = 2.5;
+          ctx.beginPath(); ctx.moveTo(-7, by+1); ctx.lineTo(7, by+1); ctx.stroke();
+          ctx.strokeStyle = "rgba(255,255,255,0.18)";
+          ctx.lineWidth = 1.5;
+          ctx.beginPath(); ctx.moveTo(-7, by); ctx.lineTo(7, by); ctx.stroke();
+        }
+        // Grip highlight
+        ctx.save(); ctx.globalAlpha = 0.4;
+        const gripHL = ctx.createLinearGradient(0, 2, 0, hL);
+        gripHL.addColorStop(0, "rgba(180,210,255,1)");
+        gripHL.addColorStop(1, "rgba(180,210,255,0)");
+        ctx.fillStyle = gripHL;
+        ctx.beginPath(); ctx.roundRect(-3, 4, 4, (hL - 6) * 0.65, 2); ctx.fill();
+        ctx.restore();
+
+        // ---- GUARD ----
+        // Dark shadow base — wide swept wings
+        ctx.fillStyle = liveOvercharged ? "#4b0d10" : "#0e2e66";
+        ctx.beginPath();
+        ctx.moveTo(-10, gY + 2); ctx.lineTo(-28, gY - 4);
+        ctx.bezierCurveTo(-34, gY - 10, -30, gY - 22, -19, gY - 23);
+        ctx.bezierCurveTo(-11, gY - 19, -10, gY - 10, -10, gY + 2);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.moveTo(10, gY + 2); ctx.lineTo(28, gY - 4);
+        ctx.bezierCurveTo(34, gY - 10, 30, gY - 22, 19, gY - 23);
+        ctx.bezierCurveTo(11, gY - 19, 10, gY - 10, 10, gY + 2);
+        ctx.fill();
+        // Mid blue fill
+        ctx.fillStyle = liveOvercharged ? "#b81f26" : "#2c68bb";
+        ctx.beginPath();
+        ctx.moveTo(-9, gY + 1); ctx.lineTo(-24, gY - 4);
+        ctx.bezierCurveTo(-28, gY - 9, -25, gY - 19, -16, gY - 20);
+        ctx.bezierCurveTo(-9, gY - 16, -9, gY - 8, -9, gY + 1);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.moveTo(9, gY + 1); ctx.lineTo(24, gY - 4);
+        ctx.bezierCurveTo(28, gY - 9, 25, gY - 19, 16, gY - 20);
+        ctx.bezierCurveTo(9, gY - 16, 9, gY - 8, 9, gY + 1);
+        ctx.fill();
+        // Highlight sheen
+        ctx.fillStyle = liveOvercharged ? "#ff8e8e" : "#6ab8ee";
+        ctx.beginPath();
+        ctx.moveTo(-9, gY - 1); ctx.lineTo(-20, gY - 5);
+        ctx.bezierCurveTo(-23, gY - 9, -21, gY - 15, -14, gY - 16);
+        ctx.bezierCurveTo(-9, gY - 14, -9, gY - 8, -9, gY - 1);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.moveTo(9, gY - 1); ctx.lineTo(20, gY - 5);
+        ctx.bezierCurveTo(23, gY - 9, 21, gY - 15, 14, gY - 16);
+        ctx.bezierCurveTo(9, gY - 14, 9, gY - 8, 9, gY - 1);
+        ctx.fill();
+
+        // ---- ORANGE STAR GEM (on guard) ----
+        ctx.save();
+        ctx.translate(0, gY - 10);
+        // Dark ring
+        ctx.fillStyle = liveOvercharged ? "#6f0d12" : "#7a3000";
+        ctx.beginPath(); ctx.arc(0, 0, 13, 0, Math.PI*2); ctx.fill();
+        // Orange radial gradient
+        const gemG = ctx.createRadialGradient(-3, -4, 1, 0, 0, 12);
+        gemG.addColorStop(0,   liveOvercharged ? "#ffe0e0" : "#fff0c0");
+        gemG.addColorStop(0.2, liveOvercharged ? "#ff8c8c" : "#ffcc50");
+        gemG.addColorStop(0.5, liveOvercharged ? "#ff3c3c" : "#ff8800");
+        gemG.addColorStop(0.8, liveOvercharged ? "#a01818" : "#cc4400");
+        gemG.addColorStop(1,   liveOvercharged ? "#6f0d12" : "#7a3000");
+        ctx.fillStyle = gemG;
+        ctx.beginPath(); ctx.arc(0, 0, 12, 0, Math.PI*2); ctx.fill();
+        // Gloss
+        ctx.save(); ctx.globalAlpha = 0.5; ctx.fillStyle = "white";
+        ctx.beginPath(); ctx.ellipse(-3, -5, 5, 3, -0.5, 0, Math.PI*2); ctx.fill();
+        ctx.restore();
+        // Star
+        ctx.fillStyle = "rgba(255,240,180,0.97)";
+        ctx.shadowColor = liveOvercharged ? "#ff4444" : "#ffcc00";
+        ctx.shadowBlur = 7;
+        ctx.beginPath();
+        for (let i = 0; i < 5; i++) {
+          const a = (i * 2 * Math.PI / 5) - Math.PI / 2;
+          const x1 = Math.cos(a)*7.5, y1 = Math.sin(a)*7.5;
+          const x2 = Math.cos(a+Math.PI/5)*3.2, y2 = Math.sin(a+Math.PI/5)*3.2;
+          i===0 ? ctx.moveTo(x1,y1) : ctx.lineTo(x1,y1);
+          ctx.lineTo(x2,y2);
+        }
+        ctx.closePath(); ctx.fill();
+        ctx.restore();
+
+        // ---- BLADE (white, fades at tip) ----
+        // Outer glow
+        ctx.save();
+        ctx.shadowColor = liveOvercharged ? "rgba(255,90,90,0.95)" : "rgba(200,230,255,0.8)";
+        ctx.shadowBlur = 18;
+        ctx.globalAlpha = 0.4;
+        ctx.strokeStyle = liveOvercharged ? "rgba(255,200,200,0.72)" : "rgba(220,240,255,0.6)";
+        ctx.lineWidth = 20;
+        ctx.lineCap = "round";
+        ctx.beginPath();
+        ctx.moveTo(0, gY + 3);
+        ctx.lineTo(0, tipY * 0.9);
+        ctx.stroke();
+        ctx.restore();
+
+        // Dark edge shadow (gives depth to white blade)
+        ctx.fillStyle = liveOvercharged ? "#6f1c1c" : "#8888aa";
+        ctx.beginPath();
+        ctx.moveTo(-9, gY + 2); ctx.lineTo(-6, gY + (tipY-gY)*0.52); ctx.lineTo(0, tipY); ctx.lineTo(6, gY + (tipY-gY)*0.52); ctx.lineTo(9, gY + 2);
+        ctx.closePath(); ctx.fill();
+
+        // Main white blade
+        const bladeGrad = ctx.createLinearGradient(0, gY, 0, tipY);
+        if (liveOvercharged) {
+          bladeGrad.addColorStop(0,    "rgba(255,245,245,1.0)");
+          bladeGrad.addColorStop(0.35, "rgba(255,160,160,0.97)");
+          bladeGrad.addColorStop(0.65, "rgba(255,70,70,0.88)");
+          bladeGrad.addColorStop(0.85, "rgba(255,40,40,0.45)");
+          bladeGrad.addColorStop(1.0,  "rgba(255,0,0,0.0)");
+        } else {
+          bladeGrad.addColorStop(0,    "rgba(255,255,255,1.0)");
+          bladeGrad.addColorStop(0.35, "rgba(240,248,255,0.97)");
+          bladeGrad.addColorStop(0.65, "rgba(210,230,255,0.82)");
+          bladeGrad.addColorStop(0.85, "rgba(190,215,255,0.45)");
+          bladeGrad.addColorStop(1.0,  "rgba(170,200,255,0.00)");
+        }
+        ctx.fillStyle = bladeGrad;
+        ctx.beginPath();
+        ctx.moveTo(-7, gY + 2);
+        ctx.lineTo(-5, gY + (tipY-gY)*0.50);
+        ctx.lineTo(0,  tipY * 0.98);
+        ctx.lineTo(5,  gY + (tipY-gY)*0.50);
+        ctx.lineTo(7,  gY + 2);
+        ctx.closePath(); ctx.fill();
+
+        // Left bevel (slight blue tint for depth)
+        ctx.save(); ctx.globalAlpha = 0.4;
+        ctx.fillStyle = liveOvercharged ? "#ff9a9a" : "#aaccee";
+        ctx.beginPath();
+        ctx.moveTo(-7, gY+2); ctx.lineTo(-9, gY+2); ctx.lineTo(-6, gY+(tipY-gY)*0.5); ctx.lineTo(-5, gY+(tipY-gY)*0.5);
+        ctx.closePath(); ctx.fill();
+        ctx.beginPath();
+        ctx.moveTo(7, gY+2); ctx.lineTo(9, gY+2); ctx.lineTo(6, gY+(tipY-gY)*0.5); ctx.lineTo(5, gY+(tipY-gY)*0.5);
+        ctx.closePath(); ctx.fill();
+        ctx.restore();
+
+        // Bright center spine
+        const spineGrad = ctx.createLinearGradient(0, gY, 0, tipY * 0.85);
+        if (liveOvercharged) {
+          spineGrad.addColorStop(0,   "rgba(255,255,255,1.0)");
+          spineGrad.addColorStop(0.4, "rgba(255,220,220,0.75)");
+          spineGrad.addColorStop(1.0, "rgba(255,200,200,0.0)");
+        } else {
+          spineGrad.addColorStop(0,   "rgba(255,255,255,1.0)");
+          spineGrad.addColorStop(0.4, "rgba(255,255,255,0.65)");
+          spineGrad.addColorStop(1.0, "rgba(255,255,255,0.0)");
+        }
+        ctx.fillStyle = spineGrad;
+        ctx.beginPath();
+        ctx.moveTo(-2, gY+2); ctx.lineTo(-1, gY+(tipY-gY)*0.52); ctx.lineTo(0, tipY*0.85); ctx.lineTo(1, gY+(tipY-gY)*0.52); ctx.lineTo(2, gY+2);
+        ctx.closePath(); ctx.fill();
+
+        // Tip sparkle
+        ctx.save();
+        ctx.globalAlpha = 0.9;
+        ctx.fillStyle = "#ffffff";
+        ctx.shadowColor = liveOvercharged ? "#ff5555" : "#ddeeff";
+        ctx.shadowBlur = 14;
+        ctx.beginPath(); ctx.arc(0, tipY * 0.97, 2.5, 0, Math.PI*2); ctx.fill();
+        ctx.strokeStyle = "rgba(255,255,255,0.75)";
+        ctx.lineWidth = 1.5;
+        ctx.beginPath(); ctx.moveTo(-5, tipY*0.97); ctx.lineTo(5, tipY*0.97); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(0, tipY*0.97-5); ctx.lineTo(0, tipY*0.97+5); ctx.stroke();
+        ctx.restore();
+
+        if (liveOvercharged) {
+          const now = performance.now() / 1000;
+          ctx.save();
+          ctx.globalCompositeOperation = "lighter";
+
+          // Animated electric aura running along the whole sword, not just static sparks.
+          for (let i = 0; i < 16; i++) {
+            const bladeT = i / 15;
+            const yy = gY + (tipY - gY) * bladeT;
+            const phase = now * 18 + i * 1.37;
+            const wig = Math.sin(phase) * (8 + bladeT * 7) + Math.sin(phase * 0.47) * 4;
+            const sparkAlpha = 0.45 + 0.35 * Math.sin(phase * 1.4);
+            ctx.fillStyle = `rgba(255,${150 + (i % 4) * 18},${150 + (i % 3) * 24},${sparkAlpha})`;
+            ctx.beginPath();
+            ctx.arc(wig, yy, 1.7 + (i % 3) * 0.45, 0, Math.PI * 2);
+            ctx.fill();
+          }
+
+          // Crawling jagged bolts that shift every frame around the blade.
+          for (let bolt = 0; bolt < 6; bolt++) {
+            const seed = now * (9.5 + bolt * 1.7) + bolt * 11.13;
+            const startT = (Math.sin(seed * 0.73) * 0.5 + 0.5) * 0.82 + 0.06;
+            const boltLen = 0.11 + 0.05 * Math.sin(seed * 1.41 + 2);
+            const side = bolt % 2 === 0 ? 1 : -1;
+            const y0 = gY + (tipY - gY) * startT;
+            const y1 = gY + (tipY - gY) * Math.min(0.98, startT + boltLen);
+            const x0 = side * (5 + 8 * Math.sin(seed));
+            const x1 = -side * (8 + 12 * Math.sin(seed * 1.9));
+            const midY = (y0 + y1) * 0.5;
+            const midX = side * (18 + 8 * Math.cos(seed * 1.3));
+
+            ctx.strokeStyle = bolt % 3 === 0 ? "rgba(255,255,255,0.95)" : "rgba(255,150,150,0.9)";
+            ctx.lineWidth = bolt % 3 === 0 ? 2.8 : 2.0;
+            ctx.shadowColor = "rgba(255,70,70,0.95)";
+            ctx.shadowBlur = 12;
+            ctx.beginPath();
+            ctx.moveTo(x0, y0);
+            ctx.lineTo(midX, midY - 12);
+            ctx.lineTo(x1, midY + 3);
+            ctx.lineTo(-midX * 0.55, y1);
+            ctx.stroke();
+          }
+
+          // Electric rim down both sides of the blade.
+          for (const side of [-1, 1]) {
+            ctx.strokeStyle = "rgba(255,90,90,0.72)";
+            ctx.lineWidth = 1.5;
+            ctx.shadowColor = "rgba(255,40,40,0.9)";
+            ctx.shadowBlur = 10;
+            ctx.beginPath();
+            for (let i = 0; i <= 9; i++) {
+              const t = i / 9;
+              const yy = gY + (tipY - gY) * t;
+              const edge = side * (8 - 5 * t);
+              const jitter = Math.sin(now * 22 + i * 1.8 + side * 4) * 3;
+              const xx = edge + jitter;
+              i === 0 ? ctx.moveTo(xx, yy) : ctx.lineTo(xx, yy);
+            }
+            ctx.stroke();
+          }
+          ctx.restore();
+        }
+
+        ctx.restore(); // end pivot translate+rotate
+      }
+    }
+
+
+    // Quick Quas trail
+    for (let i = 0; i < quasTrail.length; i++) {
+      const t = quasTrail[i];
+      const a = (t.life / t.maxLife) * 0.38 * (i / quasTrail.length);
+      ctx.save();
+      ctx.globalAlpha = a;
+      ctx.fillStyle = "#a0c8ff";
+      ctx.shadowColor = "#60a0ff";
+      ctx.shadowBlur = 8;
+      ctx.beginPath();
+      ctx.arc(t.x, t.y, player.r * 0.75, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+
+    // Inhale swirls (wind effect)
+    // Inhale swirls
+    {
+      const inhaleR = player.inhaleRadius * (upgrades.vortexVariety ? 1.5 : 1);
+      const faceAngle = player.facing >= 0 ? 0 : Math.PI;
+      // Perpendicular direction for swirl offset
+      const perpAngle = faceAngle + Math.PI / 2;
+
+      for (const sw of inhaleSwirls) {
+        const lifeFrac  = sw.life / sw.maxLife;
+        const distFrac  = sw.dist / inhaleR; // 1=far, 0=near
+
+        // World position: along face direction + perpendicular swirl drift
+        const wx = player.x
+          + Math.cos(faceAngle + sw.relAngle) * sw.dist
+          + Math.cos(perpAngle) * sw.swirlOffset;
+        const wy = player.y
+          + Math.sin(faceAngle + sw.relAngle) * sw.dist
+          + Math.sin(perpAngle) * sw.swirlOffset;
+
+        // Size: larger when far, shrinks near mouth
+        const swR = sw.r * (0.35 + 0.9 * distFrac) * lifeFrac;
+        if (swR < 0.5) continue;
+
+        // Color: shifts from sky-blue (far) → white (near mouth)
+        const rr = Math.round(180 + 75 * (1 - distFrac));
+        const gg = Math.round(215 + 40 * (1 - distFrac));
+        const bb = 255;
+        const alpha = lifeFrac * (0.38 + 0.52 * (1 - distFrac * 0.6));
+
+        ctx.save();
+        ctx.translate(wx, wy);
+        ctx.rotate(sw.rotation);
+
+        // ── Layer 1: soft outer glow halo ──
+        ctx.save();
+        ctx.globalAlpha = alpha * 0.35;
+        const halo = ctx.createRadialGradient(0, 0, 0, 0, 0, swR * 2.6);
+        halo.addColorStop(0,   `rgba(${rr},${gg},${bb},0.7)`);
+        halo.addColorStop(0.5, `rgba(${rr},${gg},${bb},0.18)`);
+        halo.addColorStop(1,   `rgba(${rr},${gg},${bb},0)`);
+        ctx.fillStyle = halo;
+        ctx.beginPath();
+        ctx.arc(0, 0, swR * 2.6, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+
+        // ── Layer 2: crescent / wind-leaf body ──
+        ctx.globalAlpha = alpha;
+        ctx.shadowColor = `rgba(160,220,255,0.85)`;
+        ctx.shadowBlur   = swR * 1.2;
+        ctx.fillStyle    = `rgba(${rr},${gg},${bb},${alpha})`;
+
+        // Crescent shape: two bezier arcs — outer and inner curves
+        ctx.beginPath();
+        // Start at right tip
+        ctx.moveTo(swR, 0);
+        // Outer arc (wide belly)
+        ctx.bezierCurveTo(
+           swR * 0.6, -swR * 1.3,
+          -swR * 0.6, -swR * 1.3,
+          -swR,        0
+        );
+        // Inner arc (hollow back)
+        ctx.bezierCurveTo(
+          -swR * 0.4,  swR * 0.7,
+           swR * 0.4,  swR * 0.7,
+           swR,        0
+        );
+        ctx.closePath();
+        ctx.fill();
+
+        // ── Layer 3: bright inner highlight ──
+        ctx.save();
+        ctx.shadowBlur  = 0;
+        ctx.globalAlpha = alpha * 0.75;
+        ctx.strokeStyle = `rgba(255,255,255,0.9)`;
+        ctx.lineWidth   = swR * 0.14;
+        ctx.lineCap     = "round";
+        ctx.beginPath();
+        ctx.moveTo(swR * 0.55, -swR * 0.15);
+        ctx.bezierCurveTo(
+           swR * 0.2,  -swR * 0.85,
+          -swR * 0.3,  -swR * 0.9,
+          -swR * 0.65, -swR * 0.3
+        );
+        ctx.stroke();
+        ctx.restore();
+
+        // ── Layer 4: motion-blur streak toward player mouth ──
+        ctx.save();
+        ctx.globalAlpha  = alpha * 0.28 * (1 - distFrac);
+        // Streak runs from this swirl toward player (in world space, so un-rotate)
+        ctx.rotate(-sw.rotation);
+        const streakAngle = Math.atan2(player.y - wy, player.x - wx);
+        const streakLen   = swR * 2.2;
+        ctx.strokeStyle  = `rgba(${rr},${gg},${bb},0.7)`;
+        ctx.lineWidth    = swR * 0.28;
+        ctx.lineCap      = "round";
+        ctx.shadowColor  = `rgba(160,220,255,0.5)`;
+        ctx.shadowBlur   = swR * 0.6;
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.lineTo(
+          Math.cos(streakAngle) * streakLen,
+          Math.sin(streakAngle) * streakLen
+        );
+        ctx.stroke();
+        ctx.restore();
+
+        ctx.restore();
+      }
+    }
+
+    ctx.save();
+    ctx.translate(player.x, player.y);
+    const flicker = player.invuln > 0 && (player.invuln % 6 < 3);
+
+    if (!flicker) {
+      const sizeBoost = player.hasEnemy ? 1.25 : 1.0;
+      const R = player.r * sizeBoost;
+
+      const bodyGrad = ctx.createRadialGradient(0, -10, 5, 0, 0, R);
+      bodyGrad.addColorStop(0, "#ffe9ff");
+      bodyGrad.addColorStop(1, "#ff7ad9");
+      ctx.fillStyle = bodyGrad;
+      ctx.beginPath();
+      ctx.arc(0, 0, R, 0, Math.PI * 2);
+      ctx.fill();
+
+      const handOffsetX = 18 * sizeBoost;
+      const handOffsetY = player.hover ? -2 : 2;
+      const handSize = (player.inhale ? 12 : 10) * sizeBoost;
+      ctx.fillStyle = "#ff9ad0";
+
+      // Compute sword hand position (in local Kirby space) if swinging
+      let swordHandLocalX = player.facing >= 0 ? handOffsetX : -handOffsetX;
+      let swordHandLocalY = handOffsetY;
+      if (sword.active) {
+        const prog = ((upgrades.metaJab ? 8 : 15) - sword.timer) / (upgrades.metaJab ? 8 : 15);
+        const angle = swordBladeAngle(sword.type, sword.facing, prog);
+        // Hand moves to track along blade direction, staying at handOffsetX distance from center
+        const dist = Math.hypot(handOffsetX, handOffsetY);
+        swordHandLocalX = Math.cos(angle) * dist;
+        swordHandLocalY = Math.sin(angle) * dist;
+      }
+
+      // Sword hand (front) - follows blade
+      ctx.beginPath();
+      ctx.ellipse(swordHandLocalX, swordHandLocalY, handSize, handSize * 0.7, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Back hand - always resting position (opposite side)
+      ctx.beginPath();
+      ctx.ellipse(
+        player.facing >= 0 ? -handOffsetX : handOffsetX,
+        handOffsetY,
+        handSize, handSize * 0.7, 0, 0, Math.PI * 2
+      );
+      ctx.fill();
+
+      ctx.fillStyle = "#ffb36b";
+      ctx.beginPath();
+      ctx.ellipse(-12 * sizeBoost, R - 4, 11 * sizeBoost, 6 * sizeBoost, 0.2, 0, Math.PI * 2);
+      ctx.ellipse(12 * sizeBoost, R - 4, 11 * sizeBoost, 6 * sizeBoost, -0.2, 0, Math.PI * 2);
+      ctx.fill();
+
+      const eyeShift = player.facing >= 0 ? 1 : -1;
+      const eyeHeight = 10 * sizeBoost;
+      const eyeWidth = 6 * sizeBoost;
+      const eyeOffsetX = 8 * sizeBoost;
+      const eyeOffsetY = -6 * sizeBoost;
+      const eyeTilt = 5 * Math.PI / 180;
+
+      function drawEye(side) {
+        ctx.save();
+        const dir = side === "left" ? -1 : 1;
+        const x = dir * eyeOffsetX + eyeShift;
+        const y = eyeOffsetY;
+        ctx.translate(x, y);
+        ctx.rotate(dir * eyeTilt);
+
+        const grad = ctx.createLinearGradient(0, -eyeHeight, 0, eyeHeight);
+        grad.addColorStop(0.0, "#000000");
+        grad.addColorStop(0.25, "#050505");
+        grad.addColorStop(0.4, "#1b2f5f");
+        grad.addColorStop(0.65, "#2f6fdc");
+        grad.addColorStop(1.0, "#3b7ff0");
+
+        ctx.fillStyle = grad;
+        ctx.beginPath();
+        ctx.ellipse(0, 0, eyeWidth, eyeHeight, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.fillStyle = "rgba(255,255,255,0.9)";
+        ctx.beginPath();
+        ctx.arc(-eyeWidth * 0.3, -eyeHeight * 0.4, 1.6 * sizeBoost, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.restore();
+      }
+
+      drawEye("left");
+      drawEye("right");
+
+      ctx.fillStyle = "#e48abf";
+      const cheekR = 3 * sizeBoost;
+      ctx.beginPath();
+      ctx.arc(-12 * sizeBoost, 6 * sizeBoost, cheekR, 0, Math.PI * 2);
+      ctx.arc(12 * sizeBoost, 6 * sizeBoost, cheekR, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.strokeStyle = "#5b1b3a";
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      if (player.inhale && !player.hasEnemy) {
+        ctx.ellipse(0, 5 * sizeBoost, 7 * sizeBoost, 9 * sizeBoost, 0, 0, Math.PI * 2);
+        ctx.fillStyle = "#ff7ad9";
+        ctx.fill();
+      } else if (player.hasEnemy) {
+        ctx.arc(0, 7 * sizeBoost, 5 * sizeBoost, 0, Math.PI);
+      } else {
+        ctx.arc(0, 8 * sizeBoost, 3.5 * sizeBoost, 0, Math.PI);
+      }
+      ctx.stroke();
+
+      if (player.inhale && !player.hasEnemy) {
+        ctx.save();
+        ctx.rotate(player.facing >= 0 ? 0 : Math.PI);
+        const r = (player.inhaleRadius * (upgrades.vortexVariety ? 1.5 : 1));
+        ctx.fillStyle = "rgba(255,255,255,0.18)";
+        ctx.beginPath();
+        ctx.moveTo(R, -14);
+        ctx.lineTo(R + r, -40);
+        ctx.lineTo(R + r, 40);
+        ctx.lineTo(R, 14);
+        ctx.closePath();
+        ctx.fill();
+        ctx.restore();
+      }
+    }
+    ctx.restore();
+
+    // ── HP Bars + Damage Numbers ────────────────────────────────
+    const allEnemies = enemies.concat(flyers).concat(sirKibbles);
+    for (const e of allEnemies) {
+      if (!e.alive || !e.maxHp || e.hpBarTimer <= 0) continue;
+
+      const barW = Math.max(40, e.r * 2.2);
+      const barH = 8;
+      const bx = e.x - barW / 2;
+      const by = e.y - e.r - 22;
+      const hpFrac = Math.max(0, e.hp / e.maxHp);
+
+      // Bar background shadow
+      ctx.save();
+      ctx.shadowColor = "rgba(0,0,0,0.7)";
+      ctx.shadowBlur = 6;
+      ctx.fillStyle = "#1a0a00";
+      ctx.beginPath();
+      ctx.roundRect(bx - 2, by - 2, barW + 4, barH + 4, 3);
+      ctx.fill();
+      ctx.shadowBlur = 0;
+
+      // Bar track
+      ctx.fillStyle = "#3a1a00";
+      ctx.beginPath();
+      ctx.roundRect(bx, by, barW, barH, 2);
+      ctx.fill();
+
+      // Bar fill — color shifts green→yellow→red by HP%
+      const r2 = Math.round(hpFrac > 0.5 ? (1 - hpFrac) * 2 * 255 : 255);
+      const g2 = Math.round(hpFrac > 0.5 ? 255 : hpFrac * 2 * 255);
+      const barGrad = ctx.createLinearGradient(bx, by, bx + barW * hpFrac, by + barH);
+      barGrad.addColorStop(0,   `rgba(${Math.min(r2+60,255)},${Math.min(g2+60,255)},40,1)`);
+      barGrad.addColorStop(1,   `rgba(${r2},${g2},10,1)`);
+      if (hpFrac > 0) {
+        ctx.fillStyle = barGrad;
+        ctx.beginPath();
+        ctx.roundRect(bx, by, barW * hpFrac, barH, 2);
+        ctx.fill();
+      }
+
+      // Bar shine
+      ctx.save();
+      ctx.globalAlpha = 0.25;
+      ctx.fillStyle = "white";
+      ctx.beginPath();
+      ctx.roundRect(bx + 1, by + 1, barW * hpFrac - 2, barH * 0.45, 1);
+      ctx.fill();
+      ctx.restore();
+
+      // Bar border
+      ctx.strokeStyle = "rgba(255,220,100,0.5)";
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.roundRect(bx, by, barW, barH, 2);
+      ctx.stroke();
+
+      // HP text
+      const hpCur = Math.round(e.hp * 10) / 10;
+      const hpMax = Math.round(e.maxHp * 10) / 10;
+      ctx.font = "bold 9px 'Press Start 2P', monospace";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillStyle = "#000";
+      ctx.fillText(`${hpCur}/${hpMax}`, e.x + 1, by + barH * 0.5 + 1);
+      ctx.fillStyle = "#fff";
+      ctx.fillText(`${hpCur}/${hpMax}`, e.x, by + barH * 0.5);
+
+      ctx.restore();
+    }
+
+    // Damage numbers (popcorn popup)
+    for (const dn of damageNumbers) {
+      const lifeFrac = dn.life / dn.maxLife;
+      const alpha = Math.min(1, lifeFrac * 3);
+      const scale = 1 + (1 - lifeFrac) * 0.4;
+
+      ctx.save();
+      ctx.globalAlpha = alpha;
+      ctx.translate(dn.x, dn.y);
+      ctx.scale(scale, scale);
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+
+      // Shadow
+      ctx.font = "bold 11px 'Press Start 2P', monospace";
+      ctx.fillStyle = "rgba(0,0,0,0.7)";
+      ctx.fillText(`-${dn.val}`, 1, 1);
+
+      // Main text — color by damage magnitude
+      const dmgColor = dn.val >= 50 ? "#ff4444"
+        : dn.val >= 20 ? "#ff9900"
+        : "#ffee44";
+      ctx.fillStyle = dmgColor;
+      ctx.shadowColor = dmgColor;
+      ctx.shadowBlur = 6;
+      ctx.fillText(`-${dn.val}`, 0, 0);
+
+      ctx.restore();
+    }
+  }
+
+  function loop() {
+    if (!shopOpen) update();
+    draw();
+    requestAnimationFrame(loop);
+  }
+  loop();
+})();
+</script>
+</body>
+</html>
