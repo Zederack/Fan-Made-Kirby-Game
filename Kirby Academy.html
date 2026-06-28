@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<title>Kirby Academy V1.20.0</title>
+<title>Kirby Academy V1.22.1</title>
 <style>
   @import url("https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap");
   html, body {
@@ -229,7 +229,170 @@
     font-weight: bold;
     display: none;
   }
-  .shopItem.owned .ownedBadge { display: block; }
+  /* ── Damage Stats Button ── */
+  #statsWrapper {
+    position: fixed;
+    top: 0;
+    left: calc(50% + 120px);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    z-index: 20;
+    pointer-events: none;
+  }
+  #statsRopeContainer {
+    display: flex;
+    gap: 36px;
+    pointer-events: none;
+  }
+  #statsBtn {
+    image-rendering: pixelated;
+    border-radius: 0;
+    font-family: "Press Start 2P", "Courier New", monospace;
+    pointer-events: all;
+    font-size: 9px;
+    font-weight: bold;
+    color: #ffe0e0;
+    background: radial-gradient(ellipse at 40% 35%, #cc2222, #6a0000);
+    border: 4px solid #3a0000;
+    padding: 7px 14px 8px;
+    cursor: pointer;
+    box-shadow:
+      0 4px 0 #3a0000, 0 8px 14px rgba(0,0,0,0.45),
+      inset 3px 3px 0 rgba(255,255,255,0.15), inset -3px -3px 0 rgba(0,0,0,0.3);
+    text-shadow: 2px 2px 0 rgba(0,0,0,0.75);
+    transition: filter 0.1s;
+    user-select: none;
+    white-space: nowrap;
+  }
+  #statsBtn:hover  { filter: brightness(1.2); }
+  #statsBtn:active { filter: brightness(0.8); }
+
+  /* ── Stats Screen ── */
+  #statsScreen {
+    font-family: "Press Start 2P", "Courier New", monospace;
+    display: flex;
+    position: fixed;
+    inset: 0;
+    background: #4a2e0e;
+    z-index: 100;
+    flex-direction: column;
+    align-items: center;
+    padding-top: 22px;
+    transform: translateY(-105%);
+    opacity: 0;
+    pointer-events: none;
+    transition: transform 0.6s cubic-bezier(0.18, 0.9, 0.24, 1), opacity 0.25s ease;
+    overflow-y: auto;
+  }
+  #statsScreen.open {
+    transform: translateY(0);
+    opacity: 1;
+    pointer-events: all;
+  }
+  #statsTitle {
+    font-size: 18px;
+    color: #ff9090;
+    text-shadow: 3px 3px 0 #600000, 0 0 20px rgba(255,80,80,0.35);
+    margin-bottom: 18px;
+    letter-spacing: 2px;
+  }
+  #statsClose {
+    position: absolute;
+    top: 16px;
+    right: 24px;
+    font-size: 22px;
+    color: #ff9090;
+    cursor: pointer;
+    background: none;
+    border: none;
+    text-shadow: 2px 2px 0 #600000;
+    font-family: "Press Start 2P", "Courier New", monospace;
+  }
+  #statsClose:hover { filter: brightness(1.4); }
+  #statsList {
+    width: 90%;
+    max-width: 700px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding-bottom: 30px;
+  }
+  .statRow {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .statLabel {
+    font-size: 13px;
+    color: #ffe8a0;
+    text-shadow: 1px 1px 0 #3a2000;
+    width: 240px;
+    flex-shrink: 0;
+    text-align: right;
+  }
+  .statLabel.total {
+    color: #ffffff;
+    font-size: 8px;
+  }
+  .statBarTrack {
+    flex: 1;
+    height: 28px;
+    background: #2a1400;
+    box-shadow: 0 -2px 0 0 #ffe58a22, 0 2px 0 0 #00000055, inset 0 1px 0 rgba(0,0,0,0.5);
+    position: relative;
+    overflow: hidden;
+  }
+  .statBarFill {
+    height: 100%;
+    transition: width 0.4s cubic-bezier(0.22, 0.61, 0.36, 1);
+    position: relative;
+    min-width: 0;
+  }
+  .statBarFill::after {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 40%;
+    background: rgba(255,255,255,0.18);
+  }
+  .statValue {
+    font-size: 13px;
+    color: #ffe14d;
+    text-shadow: 1px 1px 0 #3a2000;
+    width: 120px;
+    flex-shrink: 0;
+    text-align: left;
+  }
+
+  /* ── New infinite rows in shop ── */
+  #collectorsLuckRow, #spikedArmorRow {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: #3a2004;
+    border: none;
+    box-shadow: 0 -3px 0 0 #ffe58a, 0 3px 0 0 #1a0a00, -3px 0 0 0 #2a1a00, 3px 0 0 0 #2a1a00;
+    padding: 7px 16px;
+    image-rendering: pixelated;
+    cursor: pointer;
+    transition: filter 0.1s;
+    user-select: none;
+  }
+  #collectorsLuckRow:hover, #spikedArmorRow:hover { filter: brightness(1.2); }
+  #collectorsLuckRow:active, #spikedArmorRow:active { filter: brightness(0.85); }
+  #collectorsLuckLabel, #spikedArmorLabel {
+    font-family: 'Press Start 2P', monospace; font-size: 8px;
+    color: #ffe8a0; text-shadow: 1px 1px 0 #3a2000;
+  }
+  #collectorsLuckCost, #spikedArmorCost {
+    font-family: 'Press Start 2P', monospace; font-size: 8px;
+    color: #ffe14d; text-shadow: 1px 1px 0 #3a2000;
+  }
+  #collectorsLuckCount, #spikedArmorCount {
+    font-family: 'Press Start 2P', monospace; font-size: 7px;
+    color: #aaffaa; text-shadow: 1px 1px 0 #003a00;
+  }
 
   /* Strong Puffs — compact infinite-buy item */
   #strongPuffsRow, #swiftStepsRow {
@@ -302,6 +465,8 @@
   <span>Spawn Fire Pile: G</span>
   <span>Sword Slash: T</span>
   <span>Sword Pogo: Y</span>
+  <span>↓ in the sky = Drop</span>
+  <span>R = Shop ▼ / Close ▲ | E = Damage Stats ▼ / Close ▲</span>
   <span id="score">Score: 0</span>
   <span id="starCoins">⭐ 0 Star Coins</span>
   <span id="state"></span>
@@ -313,6 +478,20 @@
     <div class="rope"></div>
   </div>
   <button id="shopBtn">🛒 Shop</button>
+</div>
+
+<div id="statsWrapper">
+  <div id="statsRopeContainer">
+    <div class="rope"></div>
+    <div class="rope"></div>
+  </div>
+  <button id="statsBtn">📊 Damage Stats</button>
+</div>
+
+<div id="statsScreen">
+  <button id="statsClose">✕</button>
+  <div id="statsTitle">⚔ Damage Stats ⚔</div>
+  <div id="statsList"></div>
 </div>
 
 <div id="shopScreen">
@@ -426,6 +605,13 @@
       <div class="itemCost">⭐ 400</div>
       <div class="itemDesc">Fire piles explode when lifespan ends. Blue fire explodes 50% bigger. Blue fire dps: 50 → 80.</div>
     </div>
+    <div class="shopItem" data-id="toughFeet">
+      <span class="ownedBadge">✔ OWNED</span>
+      <div class="itemIcon">🦵</div>
+      <div class="itemName">Tough Feet</div>
+      <div class="itemCost">⭐ 700</div>
+      <div class="itemDesc">Ground Slam shockwave deals 3× more damage and is 2× bigger. Shockwave glows red.</div>
+    </div>
   </div>
   <div id="shopMsg2"></div>
   <div id="shopInfiniteRow">
@@ -441,6 +627,17 @@
       <span id="swiftStepsCost">⭐ 50</span>
       <span id="swiftStepsCount">×0 owned (+2% spd each)</span>
     </div>
+    <div id="collectorsLuckRow">
+      <span>🍀</span>
+      <span id="collectorsLuckLabel">Collectors' Luck</span>
+      <span id="collectorsLuckCost">⭐ 100</span>
+      <span id="collectorsLuckCount">×0 owned (+10% coins each)</span>
+    </div>
+    <div id="spikedArmorRow">
+      <span>🛡️</span>
+      <span id="spikedArmorLabel">Spiked Armor</span>
+      <span id="spikedArmorCost">⭐ 500</span>
+      <span id="spikedArmorCount">×0 owned (no thorns yet)</span>    </div>
   </div>
 </div>
 
@@ -461,7 +658,7 @@
     metaLinger: 400, starSeries: 1200, shadowStep: 500,
     pogotopia: 670, pogopolis: 1500,
     gourmetFire: 450, theMoreTheMerrier: 800, vortexVariety: 750,
-    lastStand: 400
+    lastStand: 400, toughFeet: 700
   };
   const upgrades = {
     metaThrust: false, metaReach: false, quickQuas: false,
@@ -469,7 +666,7 @@
     metaLinger: false, starSeries: false, shadowStep: false,
     pogotopia: false, pogopolis: false,
     gourmetFire: false, theMoreTheMerrier: false, vortexVariety: false,
-    lastStand: false
+    lastStand: false, toughFeet: false
   };
 
   // ── Damage & Health System ─────────────────────────────────────
@@ -494,18 +691,17 @@
     e.hpBarTimer = 0; // frames to show hp bar (refreshed on hit)
   }
 
-  function dealDamage(e, amount) {
+  function dealDamage(e, amount, source = null) {
     if (!e.alive || !e.maxHp) return;
     const dmg = Math.round(amount * strongPuffMult() * 10) / 10;
     e.hp = Math.max(0, Math.round((e.hp - dmg) * 10) / 10);
-    e.hpBarTimer = 180; // show bar for 3s
-    // Popcorn damage text
+    e.hpBarTimer = 180;
+    if (source) recordDmg(source, dmg);
     damageNumbers.push({
       x: e.x + (Math.random() - 0.5) * 20,
       y: e.y - e.r - 8,
       val: dmg,
-      life: 52,
-      maxLife: 52,
+      life: 52, maxLife: 52,
       vy: -1.4 - Math.random() * 0.8
     });
     if (e.hp <= 0) killEnemyByDamage(e);
@@ -547,11 +743,73 @@
   });
 
   function addStarCoins(n) {
-    starCoins += n;
+    if (n > 0) {
+      starCoins += Math.round(n * (1 + collectorsLuckCount * 0.10));
+    } else {
+      starCoins += n;
+    }
     if (starCoins < 0) starCoins = 0;
     starCoinEl.textContent = `⭐ ${starCoins} Star Coins`;
     shopCoinsEl.textContent = `⭐ ${starCoins} Star Coins`;
   }
+
+  // ── Damage Tracking ──────────────────────────────────────────
+  const damageStats = {
+    sword: 0, overchargedSword: 0,
+    fire: 0, blueFire: 0,
+    lightning: 0, starSpit: 0,
+    helperFire: 0, shadowStep: 0, secondShock: 0,
+    spikedArmor: 0, downDrop: 0, dropShockwave: 0
+  };
+  function recordDmg(source, amount) {
+    if (damageStats[source] !== undefined) damageStats[source] += amount;
+  }
+
+  // ── Collectors' Luck ─────────────────────────────────────────
+  let collectorsLuckCount = 0;
+  let collectorsLuckCost  = 100;
+  const collectorsLuckCountEl = document.getElementById("collectorsLuckCount");
+  const collectorsLuckCostEl  = document.getElementById("collectorsLuckCost");
+  function coinMult() { return 1 + collectorsLuckCount * 0.10; } // kept for reference
+
+  document.getElementById("collectorsLuckRow").addEventListener("click", () => {
+    if (starCoins < collectorsLuckCost) {
+      shopMsg2El.textContent = "Not enough Star Coins!";
+      setTimeout(() => { shopMsg2El.textContent = ""; }, 1500);
+      return;
+    }
+    addStarCoins(-collectorsLuckCost);
+    collectorsLuckCount++;
+    collectorsLuckCost = Math.round(collectorsLuckCost * 1.2);
+    collectorsLuckCountEl.textContent = `×${collectorsLuckCount} owned (+${collectorsLuckCount * 10}% coins)`;
+    collectorsLuckCostEl.textContent  = `⭐ ${collectorsLuckCost}`;
+    shopMsg2El.textContent = "";
+  });
+
+  // ── Spiked Armor ─────────────────────────────────────────────
+  let spikedArmorCount = 0;
+  let spikedArmorCost  = 500;
+  const spikedArmorCountEl = document.getElementById("spikedArmorCount");
+  const spikedArmorCostEl  = document.getElementById("spikedArmorCost");
+  function spikedArmorDmg() {
+    if (spikedArmorCount < 1) return 0;
+    const base = upgrades.metaJab ? 50 : 25;
+    return base * (0.05 + spikedArmorCount * 0.05);
+  }
+
+  document.getElementById("spikedArmorRow").addEventListener("click", () => {
+    if (starCoins < spikedArmorCost) {
+      shopMsg2El.textContent = "Not enough Star Coins!";
+      setTimeout(() => { shopMsg2El.textContent = ""; }, 1500);
+      return;
+    }
+    addStarCoins(-spikedArmorCost);
+    spikedArmorCount++;
+    spikedArmorCost = Math.round(spikedArmorCost * 1.25);
+    spikedArmorCountEl.textContent = `×${spikedArmorCount} owned — more thorn damage per upgrade`;
+    spikedArmorCostEl.textContent  = `⭐ ${spikedArmorCost}`;
+    shopMsg2El.textContent = "";
+  });
 
   function getEnemyType(e) {
     if (sirKibbles.includes(e) || e.burnType === "kibble") return "sirKibble";
@@ -577,11 +835,15 @@
     player.invuln = invulnFrames;
     const dir = Math.sign(player.x - sourceX) || -player.facing || 1;
     player.vx = dir * 5;
-    player.vy = -6;
+    if (!isDropping) player.vy = -6; // no vertical bounce during slam
   }
 
   function damagePlayerFromEnemy(e, invulnFrames = 50) {
     damagePlayer(contactCoinLoss(e), e.x, invulnFrames);
+    // Spiked Armor retaliation
+    if (spikedArmorCount >= 1 && e.alive) {
+      dealDamage(e, spikedArmorDmg(), "spikedArmor");
+    }
   }
 
   function dashPathHitsEnemy(e, startX, endX, dashY) {
@@ -600,7 +862,7 @@
     // 3× star spit damage — stacks with Strong Puffs via dealDamage
     const starDmg = (upgrades.starSeries ? 100 : 75) * (upgrades.vortexVariety ? 2 : 1);
     const shadowDmg = starDmg * 3;
-    dealDamage(e, shadowDmg);
+    dealDamage(e, shadowDmg, "shadowStep");
     // Always spawn a poof on contact for visual feedback
     spawnStarPoof(e.x, e.y, e.r * 0.9);
   }
@@ -655,6 +917,98 @@
   shopBtn.addEventListener("click", openShop);
   shopClose.addEventListener("click", closeShop);
 
+  // ── Damage Stats Screen ──────────────────────────────────────
+  let statsOpen = false;
+  const statsScreen = document.getElementById("statsScreen");
+  const statsBtn    = document.getElementById("statsBtn");
+  const statsClose  = document.getElementById("statsClose");
+  const statsList   = document.getElementById("statsList");
+
+  const STAT_SOURCES = [
+    { key: "sword",          label: "Sword",            color: "#88ccff", total: false },
+    { key: "overchargedSword", label: "Overcharged Sword", color: "#ff8888", total: false },
+    { key: "_totalSword",    label: "TOTAL SWORD",       color: "#ffffff", total: true  },
+    { key: "fire",           label: "Fire",              color: "#ff9922", total: false },
+    { key: "blueFire",       label: "Blue Fire",         color: "#4488ff", total: false },
+    { key: "_totalFire",     label: "TOTAL FIRE",        color: "#ffcc44", total: true  },
+    { key: "lightning",      label: "Lightning",         color: "#ff88cc", total: false },
+    { key: "starSpit",       label: "Star Spits",        color: "#ffff44", total: false },
+    { key: "helperFire",     label: "Helper Fire",       color: "#ff6633", total: false },
+    { key: "shadowStep",     label: "Shadow Step",       color: "#bb88ff", total: false },
+    { key: "secondShock",    label: "Second Shock",      color: "#ff4444", total: false },
+    { key: "spikedArmor",   label: "Spiked Armor",      color: "#cc88ff", total: false },
+    { key: "downDrop",       label: "Down Drop",         color: "#ff8844", total: false },
+    { key: "dropShockwave",  label: "Drop Shockwave",    color: "#44ccff", total: false },
+    { key: "_totalUpgrades", label: "TOTAL UPGRADES",    color: "#ddddff", total: true  },
+  ];
+
+  function getStatValue(key) {
+    if (key === "_totalSword")    return damageStats.sword + damageStats.overchargedSword + damageStats.secondShock;
+    if (key === "_totalFire")     return damageStats.fire  + damageStats.blueFire;
+    if (key === "_totalUpgrades") return damageStats.shadowStep + damageStats.spikedArmor + damageStats.downDrop + damageStats.dropShockwave;
+    return damageStats[key] || 0;
+  }
+
+  function renderStats() {
+    const vals = STAT_SOURCES.map(s => getStatValue(s.key));
+    const maxVal = Math.max(...vals, 1);
+
+    // Log-blend scale: pure linear ratio can make small values invisible when
+    // max is 50x larger. We blend 70% linear + 30% log-normalized so every
+    // non-zero source is at least faintly visible while big differences stay obvious.
+    function scaledPct(v) {
+      if (v <= 0) return 0;
+      const linear = v / maxVal;                                   // 0..1
+      const logV   = Math.log(v + 1);
+      const logMax = Math.log(maxVal + 1);
+      const logN   = logV / logMax;                                // 0..1
+      const blended = linear * 0.75 + logN * 0.25;               // 75% linear, 25% log
+      return Math.min(100, blended * 100);                        // percent
+    }
+
+    statsList.innerHTML = "";
+    STAT_SOURCES.forEach((s, i) => {
+      const v    = vals[i];
+      const pct  = scaledPct(v).toFixed(3);
+      const row  = document.createElement("div");
+      row.className = "statRow";
+
+      // Tick markers at 25%, 50%, 75% of track for visual reference
+      const ticks = [25, 50, 75].map(t =>
+        `<div style="position:absolute;top:0;bottom:0;left:${t}%;width:1px;background:rgba(255,220,100,0.12);pointer-events:none;"></div>`
+      ).join("");
+
+      row.innerHTML = `
+        <div class="statLabel${s.total ? " total" : ""}">${s.label}</div>
+        <div class="statBarTrack">
+          ${ticks}
+          <div class="statBarFill" style="
+            width:${pct}%;
+            background:linear-gradient(90deg,${s.color}88,${s.color}dd,${s.color});
+            box-shadow:inset 0 -2px 0 rgba(0,0,0,0.35), 0 0 12px ${s.color}66;
+          "></div>
+        </div>
+        <div class="statValue">${v > 0 ? Math.round(v).toLocaleString() : "—"}</div>
+      `;
+      statsList.appendChild(row);
+    });
+  }
+
+  statsBtn.addEventListener("click", () => {
+    if (statsOpen) {
+      statsOpen = false;
+      statsScreen.classList.remove("open");
+    } else {
+      statsOpen = true;
+      renderStats();
+      statsScreen.classList.add("open");
+    }
+  });
+  statsClose.addEventListener("click", () => {
+    statsOpen = false;
+    statsScreen.classList.remove("open");
+  });
+
   document.querySelectorAll(".shopItem").forEach(el => {
     el.addEventListener("click", () => {
       const id = el.dataset.id;
@@ -671,8 +1025,13 @@
         el.classList.add("owned");
         el.classList.remove("selected");
         selectedItem = null;
-        shopMsg.textContent = "✔ Purchased! (+3 Strong Puffs bonus!)";
-        grantFreeStrongPuffs(3);
+        if (SWIFT_STEP_GRANTS.has(id)) {
+          shopMsg.textContent = "✔ Purchased!";
+          grantFreeSwiftSteps(3);
+        } else {
+          shopMsg.textContent = "✔ Purchased!";
+          grantFreeStrongPuffs(3);
+        }
         applyUpgrades();
       } else {
         // First click = select
@@ -692,6 +1051,18 @@
     strongPuffsCountEl.textContent = `×${strongPuffsCount} owned (+${strongPuffsCount * 3}% dmg)`;
     strongPuffsCostEl.textContent  = `⭐ ${strongPuffsCost}`;
   }
+
+  function grantFreeSwiftSteps(n) {
+    for (let i = 0; i < n; i++) {
+      swiftStepsCount++;
+      swiftStepsCost = Math.round(swiftStepsCost * 1.05);
+    }
+    swiftStepsCountEl.textContent = `×${swiftStepsCount} owned (+${swiftStepsCount * 2}% spd)`;
+    swiftStepsCostEl.textContent  = `⭐ ${swiftStepsCost}`;
+  }
+
+  // IDs that grant Swift Step on purchase instead of Strong Puffs
+  const SWIFT_STEP_GRANTS = new Set(["metaThrust","metaReach","metaJab","metaLinger","quickQuas","toughFeet"]);
 
   // Swift Step — infinite speed upgrade
   let swiftStepsCount = 0;
@@ -774,6 +1145,8 @@
   const flyers = [];
   const sirKibbles = [];
   const boomerangs = [];
+  // Cached flat array rebuilt once per update() — avoids repeated concat allocations
+  const allEnemies = [];
   const stars = [];
   const starTrails = [];
   const starExplosions = [];
@@ -816,7 +1189,15 @@
   let dashCooldown = 0;
   const DASH_COOLDOWN_FRAMES = 18;
   let prevShift = false;
+  let prevDown  = false;
   const dashTrail = [];
+
+  // Ground Slam / Drop
+  let isDropping   = false;
+  let dropStartY   = 0;
+  const dropTrail  = [];
+  let dropHitEnemies = new Set();
+  const groundSlams  = []; // expanding shockwave rings on landing
 
   let yellowHelperPresent = false;
   let prevP = false;
@@ -833,6 +1214,7 @@
   let autoHelperActive = false;
   let autoHelperTimer = 0;
   let prevR = false;
+  let prevE = false;
 
   const SWORD_SWING_FRAMES = 15;
   const SWORD_COOLDOWN_FRAMES = 30; // 0.5 seconds at 60fps
@@ -1359,12 +1741,31 @@
     const w = canvas.width;
     const h = canvas.height;
 
+    // Rebuild enemy cache once per frame (avoids O(n) concat in every loop)
+    allEnemies.length = 0;
+    for (const e of enemies) allEnemies.push(e);
+    for (const f of flyers)  allEnemies.push(f);
+    for (const sk of sirKibbles) allEnemies.push(sk);
+
     const rHeld = !!keys["r"];
     if (rHeld && !prevR) {
       if (shopOpen) closeShop();
       else openShop();
     }
     prevR = rHeld;
+
+    const eHeld = !!keys["e"];
+    if (eHeld && !prevE) {
+      if (statsOpen) {
+        statsOpen = false;
+        statsScreen.classList.remove("open");
+      } else {
+        statsOpen = true;
+        renderStats();
+        statsScreen.classList.add("open");
+      }
+    }
+    prevE = eHeld;
 
     difficulty += 0.0005;
     difficulty = Math.min(difficulty, 6);
@@ -1382,7 +1783,7 @@
       player.vx = baseSpeed * Math.sign(player.vx);
     }
 
-    const jumpPressed = keys["w"] || keys["arrowup"] || keys[" "];
+    const jumpPressed = (keys["w"] || keys["arrowup"] || keys[" "]) && !isDropping;
 
     if (jumpPressed) {
       if (player.onGround) {
@@ -1444,7 +1845,7 @@
       const dashDist = canvas.width * 0.2;
       const startX = player.x;
       const endX = Math.min(Math.max(player.x + dir * dashDist, player.r), canvas.width - player.r);
-      const dashTargets = enemies.concat(flyers).concat(sirKibbles)
+      const dashTargets = allEnemies
         .filter(e => dashPathHitsEnemy(e, startX, endX, player.y))
         .sort((a, b) => Math.abs(a.x - startX) - Math.abs(b.x - startX));
 
@@ -1487,12 +1888,20 @@
     // The More, the Merrier: V toggles auto-summon
     const vHeld = !!keys["v"];
     if (vHeld && !prevV) {
-      // Grant 1 Strong Puffs + 1 Swift Step for free
+      // Grant 1 of each infinite upgrade for free
       grantFreeStrongPuffs(1);
       swiftStepsCount++;
       swiftStepsCost = Math.round(swiftStepsCost * 1.05);
       swiftStepsCountEl.textContent = `×${swiftStepsCount} owned (+${swiftStepsCount * 2}% spd)`;
       swiftStepsCostEl.textContent  = `⭐ ${swiftStepsCost}`;
+      collectorsLuckCount++;
+      collectorsLuckCost = Math.round(collectorsLuckCost * 1.2);
+      collectorsLuckCountEl.textContent = `×${collectorsLuckCount} owned (+${collectorsLuckCount * 10}% coins)`;
+      collectorsLuckCostEl.textContent  = `⭐ ${collectorsLuckCost}`;
+      spikedArmorCount++;
+      spikedArmorCost = Math.round(spikedArmorCost * 1.25);
+      spikedArmorCountEl.textContent = `×${spikedArmorCount} owned — more thorn damage per upgrade`;
+      spikedArmorCostEl.textContent  = `⭐ ${spikedArmorCost}`;
     }
     prevV = vHeld;
 
@@ -1557,16 +1966,15 @@
 
     const uHeld = !!keys["u"];
     if (uHeld && !prevU) {
-      let newlyGranted = 0;
       Object.keys(upgrades).forEach(id => {
         if (!upgrades[id]) {
           upgrades[id] = true;
-          newlyGranted++;
+          if (SWIFT_STEP_GRANTS.has(id)) grantFreeSwiftSteps(3);
+          else grantFreeStrongPuffs(3);
         }
         const el = document.querySelector(`.shopItem[data-id="${id}"]`);
         if (el) el.classList.add("owned");
       });
-      grantFreeStrongPuffs(newlyGranted * 3);
       applyUpgrades();
     }
     prevU = uHeld;
@@ -1657,7 +2065,7 @@
       sword.trailSlices.push({ points: slice, life: 12, maxLife: 12, overcharged: overchargedNow });
 
       // Collision: check all blade points against enemies
-      const allTargets = enemies.concat(flyers).concat(sirKibbles);
+      const allTargets = allEnemies;
       for (const pt of slice) {
         for (const e of allTargets) {
           if (!e.alive || sword.hitEnemies.has(e)) continue;
@@ -1666,8 +2074,7 @@
             const baseSwordDmg = upgrades.metaJab ? 50 : 25;
             const overchargedNow = isSwordOvercharged();
             const swordDmg = overchargedNow ? baseSwordDmg * 2 : baseSwordDmg;
-            dealDamage(e, swordDmg);
-            // Schedule delayed shock: 0.5x base sword dmg after 2 seconds (120 frames)
+            dealDamage(e, swordDmg, overchargedNow ? "overchargedSword" : "sword");
             if (overchargedNow && e.alive) {
               swordShocks.push({ enemy: e, timer: 120, dmg: baseSwordDmg * 0.5 });
             }
@@ -1738,7 +2145,7 @@
       sh.timer--;
       if (sh.timer <= 0) {
         if (sh.enemy.alive) {
-          dealDamage(sh.enemy, sh.dmg);
+          dealDamage(sh.enemy, sh.dmg, "secondShock");
           spawnLightningBurst(sh.enemy.x, sh.enemy.y, sh.enemy.r * 1.1);
         }
         swordShocks.splice(i, 1);
@@ -1749,7 +2156,7 @@
       ball.life--;
       if (!ball.pulse || isNaN(ball.pulse)) ball.pulse = 0;
       ball.pulse += 0.22;
-      for (const e of enemies.concat(flyers).concat(sirKibbles)) {
+      for (const e of allEnemies) {
         if (!e.alive) continue;
         ensureElectricState(e);
         const dx = e.x - ball.x;
@@ -1763,7 +2170,7 @@
     for (const sw of shockwaves) {
       sw.life--;
       sw.x += sw.vx;
-      for (const e of enemies.concat(flyers).concat(sirKibbles)) {
+      for (const e of allEnemies) {
         if (!e.alive || sw.hit.has(e)) continue;
         const dx = Math.abs(e.x - sw.x);
         const dy = Math.abs(e.y - sw.y);
@@ -1787,7 +2194,7 @@
         spark.vy += 0.08;
         spark.life--;
       }
-      for (const e of enemies.concat(flyers).concat(sirKibbles)) {
+      for (const e of allEnemies) {
         if (!e.alive || blast.hitEnemies.has(e)) continue;
         const dist = Math.hypot(e.x - blast.x, e.y - blast.y);
         if (dist < e.r + currentR) {
@@ -1803,7 +2210,33 @@
     }
 
     if (!player.onGround) {
+      // Drop slam: 3x gravity when dropping
+      if (isDropping) {
+        player.vy += gravity * 2; // extra 2x on top of the 1x below = 3x total
+      }
       player.vy += gravity * (player.hover ? 0.35 : 1);
+    }
+
+    // Ground Slam trigger: down key while high enough in air
+    const DROP_HEIGHT_THRESHOLD = 120;
+    const downHeld = keys["arrowdown"] || keys["s"];
+    if (downHeld && !prevDown && !player.onGround && !isDropping &&
+        (groundY() - player.r - player.y) >= DROP_HEIGHT_THRESHOLD) {
+      isDropping = true;
+      dropStartY = player.y;          // record height at slam initiation
+      dropHitEnemies = new Set();
+      player.hover = false;
+      player.vy = Math.max(player.vy, 10); // ensure downward
+    }
+    prevDown = !!downHeld;
+
+    // Trail while dropping
+    if (isDropping) {
+      dropTrail.push({ x: player.x, y: player.y, life: 18, maxLife: 18 });
+    }
+    for (let i = dropTrail.length - 1; i >= 0; i--) {
+      dropTrail[i].life--;
+      if (dropTrail[i].life <= 0) dropTrail.splice(i, 1);
     }
 
     player.x += player.vx;
@@ -1813,12 +2246,67 @@
     if (player.x + player.r > w) player.x = w - player.r;
     if (player.y > h + 200) resetPlayer();
 
+    // Drop: check enemy collision while descending
+    if (isDropping) {
+      const dropBaseDmg = (upgrades.starSeries ? 100 : 75) * (upgrades.vortexVariety ? 2 : 1) * 3 * 2;
+      for (const e of allEnemies) {
+        if (!e.alive || dropHitEnemies.has(e)) continue;
+        if (Math.hypot(e.x - player.x, e.y - player.y) < e.r + player.r) {
+          dropHitEnemies.add(e);
+          const onFloor = (e.y + e.r) >= groundY() - 4;
+          const finalDmg = dropBaseDmg * (onFloor ? 2 : 1);
+          dealDamage(e, finalDmg, "downDrop");
+        }
+      }
+    }
+
     if (player.y + player.r >= groundY()) {
       player.y = groundY() - player.r;
-      player.vy = 0;
-      player.onGround = true;
+      if (isDropping) {
+        // Rebound: 10% of drop height converted to upward velocity
+        // dropStartY is the y when slam was triggered; ground is groundY()-player.r
+        const dropHeight = (groundY() - player.r) - dropStartY;
+        const reboundHeight = dropHeight * 0.10;
+        // v = sqrt(2 * g * h) → upward velocity for that rebound height
+        const reboundVy = -Math.sqrt(2 * 0.4 * Math.max(0, reboundHeight));
+
+        // Ground impact shockwave
+        const slamR       = upgrades.toughFeet ? player.r * 6 : player.r * 3;
+        const slamDmgBase = (upgrades.metaJab ? 50 : 25) * 0.5 * (upgrades.toughFeet ? 3 : 1);
+        groundSlams.push({
+          x: player.x, y: groundY(),
+          r: 0, maxR: slamR,
+          life: 28, maxLife: 28,
+          dmgBase: slamDmgBase,
+          hit: new Set(),
+          toughFeet: upgrades.toughFeet
+        });
+        isDropping = false;
+        dropHitEnemies = new Set();
+        player.vy = reboundVy;       // apply rebound
+        player.onGround = false;     // briefly airborne from rebound
+      } else {
+        player.vy = 0;
+        player.onGround = true;
+      }
     } else {
       player.onGround = false;
+    }
+
+    // Tick ground slam shockwaves
+    for (let i = groundSlams.length - 1; i >= 0; i--) {
+      const sl = groundSlams[i];
+      sl.life--;
+      sl.r = sl.maxR * (1 - sl.life / sl.maxLife);
+      // Enemy contact
+      for (const e of allEnemies) {
+        if (!e.alive || sl.hit.has(e)) continue;
+        if (Math.hypot(e.x - sl.x, e.y - sl.y) < sl.r + e.r) {
+          sl.hit.add(e);
+          dealDamage(e, sl.dmgBase, "dropShockwave");
+        }
+      }
+      if (sl.life <= 0) groundSlams.splice(i, 1);
     }
 
     enemyTimer--;
@@ -1854,7 +2342,7 @@
         if (e.burnDmgAccum >= 1) {
           const dmgChunk = Math.floor(e.burnDmgAccum * 10) / 10;
           e.burnDmgAccum -= dmgChunk;
-          dealDamage(e, dmgChunk);
+          dealDamage(e, dmgChunk, e.burnFromBlue ? "blueFire" : "fire");
           if (!e.alive) continue;
         }
         if (e.burnTimer <= 0) {
@@ -1869,7 +2357,7 @@
         if (e.electDmgAccum >= 1) {
           const dmgChunk = Math.floor(e.electDmgAccum * 10) / 10;
           e.electDmgAccum -= dmgChunk;
-          dealDamage(e, dmgChunk);
+          dealDamage(e, dmgChunk, "lightning");
           if (!e.alive) continue;
         }
         if (e.electrifyTimer <= 0) {
@@ -1930,7 +2418,7 @@
         if (f.burnDmgAccum >= 1) {
           const dmgChunk = Math.floor(f.burnDmgAccum * 10) / 10;
           f.burnDmgAccum -= dmgChunk;
-          dealDamage(f, dmgChunk);
+          dealDamage(f, dmgChunk, f.burnFromBlue ? "blueFire" : "fire");
           if (!f.alive) continue;
         }
         if (f.burnTimer <= 0) { f.burning = false; f.burnStacks = 0; }
@@ -1942,7 +2430,7 @@
         if (f.electDmgAccum >= 1) {
           const dmgChunk = Math.floor(f.electDmgAccum * 10) / 10;
           f.electDmgAccum -= dmgChunk;
-          dealDamage(f, dmgChunk);
+          dealDamage(f, dmgChunk, "lightning");
           if (!f.alive) continue;
         }
         if (f.electrifyTimer <= 0) { f.electrified = false; }
@@ -1995,7 +2483,7 @@
         if (sk.burnDmgAccum >= 1) {
           const dmgChunk = Math.floor(sk.burnDmgAccum * 10) / 10;
           sk.burnDmgAccum -= dmgChunk;
-          dealDamage(sk, dmgChunk);
+          dealDamage(sk, dmgChunk, sk.burnFromBlue ? "blueFire" : "fire");
           if (!sk.alive) continue;
         }
         if (sk.burnTimer <= 0) { sk.burning = false; sk.burnStacks = 0; }
@@ -2007,7 +2495,7 @@
         if (sk.electDmgAccum >= 1) {
           const dmgChunk = Math.floor(sk.electDmgAccum * 10) / 10;
           sk.electDmgAccum -= dmgChunk;
-          dealDamage(sk, dmgChunk);
+          dealDamage(sk, dmgChunk, "lightning");
           if (!sk.alive) continue;
         }
         if (sk.electrifyTimer <= 0) { sk.electrified = false; }
@@ -2102,7 +2590,7 @@
         if (Math.hypot(e.x - s.x, e.y - s.y) < e.r + s.r) {
           spawnStarPoof(s.x, s.y, s.r);
           const dmg = (upgrades.starSeries ? 100 : 75) * (upgrades.vortexVariety ? 2 : 1);
-          dealDamage(e, dmg);
+          dealDamage(e, dmg, "starSpit");
           if (s.pierceLeft > 0) { s.pierceLeft--; } else { s.dead = true; }
         }
       }
@@ -2111,7 +2599,7 @@
         if (Math.hypot(f.x - s.x, f.y - s.y) < f.r + s.r) {
           spawnStarPoof(s.x, s.y, s.r);
           const dmg = (upgrades.starSeries ? 100 : 75) * (upgrades.vortexVariety ? 2 : 1);
-          dealDamage(f, dmg);
+          dealDamage(f, dmg, "starSpit");
           if (s.pierceLeft > 0) { s.pierceLeft--; } else { s.dead = true; }
         }
       }
@@ -2120,7 +2608,7 @@
         if (Math.hypot(sk.x - s.x, sk.y - s.y) < sk.r + s.r) {
           spawnStarPoof(s.x, s.y, s.r);
           const dmg = (upgrades.starSeries ? 100 : 75) * (upgrades.vortexVariety ? 2 : 1);
-          dealDamage(sk, dmg);
+          dealDamage(sk, dmg, "starSpit");
           if (s.pierceLeft > 0) { s.pierceLeft--; } else { s.dead = true; }
         }
       }
@@ -2168,7 +2656,7 @@
       } else {
         let nearest = null;
         let bestDist = 999999;
-        const allEnemies = enemies.concat(flyers).concat(sirKibbles);
+        const allEnemies = allEnemies;
         for (const e of allEnemies) {
           if (!e.alive) continue;
           const dx = e.x - h.x;
@@ -2289,7 +2777,7 @@
         }
       }
 
-      const allEnemies2 = enemies.concat(flyers).concat(sirKibbles);
+      const allEnemies2 = allEnemies;
       for (const e of allEnemies2) {
         if (!e.alive || h.dead) continue;
         const dx = e.x - h.x;
@@ -2320,7 +2808,7 @@
             // Direct damage: 2 per 20fps frame = every 3 frames at 60fps
             if (!h._dmgFrame) h._dmgFrame = 0;
             h._dmgFrame++;
-            if (h._dmgFrame >= 3) { h._dmgFrame = 0; dealDamage(e, 2); }
+            if (h._dmgFrame >= 3) { h._dmgFrame = 0; dealDamage(e, 2, "helperFire"); }
             if (h.yellow) {
               const knockDir = Math.sign(h.x - e.x) || 1;
               h.vx = knockDir * 4;
@@ -2352,7 +2840,7 @@
         continue;
       }
 
-      const allEnemies = enemies.concat(flyers).concat(sirKibbles);
+      const allEnemies = allEnemies;
       for (const e of allEnemies) {
         if (!e.alive || p.dead) continue;
         const dx = e.x - p.x;
@@ -2402,7 +2890,7 @@
         }
       }
 
-      const pileTargets = enemies.concat(flyers).concat(sirKibbles);
+      const pileTargets = allEnemies;
       for (const e of pileTargets) {
         if (!e.alive || pile.dead) continue;
         if (!pile.blue && pile.consumed) continue;
@@ -2433,7 +2921,7 @@
 
       let target = null;
       let best = 999999;
-      for (const e of enemies.concat(flyers).concat(sirKibbles)) {
+      for (const e of allEnemies) {
         if (!e.alive) continue;
         const dx = e.x - fb.x;
         const dy = e.y - fb.y;
@@ -2477,7 +2965,7 @@
       }
       while (fb.particles.length > 70) fb.particles.shift();
 
-      for (const e of enemies.concat(flyers).concat(sirKibbles)) {
+      for (const e of allEnemies) {
         if (!e.alive || fb.dead) continue;
         const dx = e.x - fb.x;
         const dy = e.y - fb.y;
@@ -2816,7 +3304,7 @@
       lx.ringR += (lx.r * 1.4) / lx.maxLife;
       for (const p of lx.particles) { p.life--; }
       // Apply burn to any enemy in range
-      const lxTargets = enemies.concat(flyers).concat(sirKibbles);
+      const lxTargets = allEnemies;
       for (const e of lxTargets) {
         if (!e.alive || lx.hitEnemies.has(e)) continue;
         if (Math.hypot(e.x - lx.x, e.y - lx.y) < lx.r * 1.3 + e.r) {
@@ -2913,7 +3401,7 @@
     }
 
     // hpBarTimer + damageNumbers tick
-    for (const e of enemies.concat(flyers).concat(sirKibbles)) {
+    for (const e of allEnemies) {
       if (!e.alive) continue;
       if (e.hpBarTimer > 0) e.hpBarTimer--;
     }
@@ -2951,18 +3439,76 @@
       const alpha = t.life / 14;
       const x1 = t.dir > 0 ? t.x1 : t.x2;
       const x2 = t.dir > 0 ? t.x2 : t.x1;
-      const y = t.y;
-      const grad = ctx.createLinearGradient(x1, y, x2, y);
-      grad.addColorStop(0, `rgba(255,255,255,${alpha * 0.9})`);
-      grad.addColorStop(0.4, `rgba(255,180,255,${alpha * 0.8})`);
-      grad.addColorStop(1, `rgba(255,80,200,${alpha * 0.0})`);
-      ctx.strokeStyle = grad;
-      ctx.lineWidth = 26;
-      ctx.lineCap = "round";
-      ctx.beginPath();
-      ctx.moveTo(x1, y);
-      ctx.lineTo(x2, y);
-      ctx.stroke();
+      const y  = t.y;
+      const len = Math.abs(x2 - x1);
+
+      ctx.save();
+
+      // Layer 1: wide outer glow bloom
+      const outerG = ctx.createLinearGradient(x1, y, x2, y);
+      outerG.addColorStop(0,    `rgba(255,100,255,${alpha * 0.6})`);
+      outerG.addColorStop(0.3,  `rgba(255,200,255,${alpha * 0.4})`);
+      outerG.addColorStop(1,    `rgba(210,40,210,0)`);
+      ctx.strokeStyle = outerG;
+      ctx.lineWidth   = 48;
+      ctx.lineCap     = "round";
+      ctx.shadowColor = "#ff60ff";
+      ctx.shadowBlur  = 30;
+      ctx.beginPath(); ctx.moveTo(x1, y); ctx.lineTo(x2, y); ctx.stroke();
+
+      // Layer 2: bright mid streak
+      const midG = ctx.createLinearGradient(x1, y, x2, y);
+      midG.addColorStop(0,    `rgba(255,255,255,${alpha * 0.95})`);
+      midG.addColorStop(0.2,  `rgba(255,210,255,${alpha * 0.88})`);
+      midG.addColorStop(0.65, `rgba(255,80,240,${alpha * 0.55})`);
+      midG.addColorStop(1,    `rgba(190,30,180,0)`);
+      ctx.strokeStyle = midG;
+      ctx.lineWidth   = 16;
+      ctx.shadowColor = "#ffffff";
+      ctx.shadowBlur  = 14;
+      ctx.beginPath(); ctx.moveTo(x1, y); ctx.lineTo(x2, y); ctx.stroke();
+
+      // Layer 3: thin white hot core
+      const coreG = ctx.createLinearGradient(x1, y, x2, y);
+      coreG.addColorStop(0,   `rgba(255,255,255,${alpha})`);
+      coreG.addColorStop(0.55,`rgba(255,255,255,${alpha * 0.55})`);
+      coreG.addColorStop(1,   `rgba(255,255,255,0)`);
+      ctx.strokeStyle = coreG;
+      ctx.lineWidth   = 3.5;
+      ctx.shadowBlur  = 6;
+      ctx.beginPath(); ctx.moveTo(x1, y); ctx.lineTo(x2, y); ctx.stroke();
+
+      // Layer 4: two parallel speed lines
+      ctx.shadowBlur = 0;
+      for (let s = -1; s <= 1; s += 2) {
+        const oy = s * (10 + 6 * (1 - alpha));
+        const sG = ctx.createLinearGradient(x1, y + oy, x2, y + oy);
+        sG.addColorStop(0,   `rgba(255,210,255,${alpha * 0.55})`);
+        sG.addColorStop(0.5, `rgba(255,120,255,${alpha * 0.35})`);
+        sG.addColorStop(1,   `rgba(200,50,200,0)`);
+        ctx.strokeStyle = sG;
+        ctx.lineWidth   = 2;
+        ctx.beginPath();
+        ctx.moveTo(x1, y + oy);
+        ctx.lineTo(x1 + len * 0.78, y + oy);
+        ctx.stroke();
+      }
+
+      // Layer 5: sparkle dots scattered along trail
+      ctx.globalAlpha = alpha * 0.85;
+      for (let k = 0; k < 6; k++) {
+        const t2 = k / 5;
+        const sx = x1 + len * t2 * 0.9;
+        const sy = y + Math.sin(k * 1.9 + t.life * 0.6) * 10;
+        ctx.fillStyle   = k % 2 === 0 ? "#ffffff" : "#ff88ff";
+        ctx.shadowColor = "#ff44ff";
+        ctx.shadowBlur  = 10;
+        ctx.beginPath();
+        ctx.arc(sx, sy, (2.5 + k * 0.4) * alpha, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      ctx.restore();
     }
 
     function drawStarShape(cx, cy, r, angle, alpha) {
@@ -3050,6 +3596,46 @@
         ctx.fill();
       }
 
+      ctx.restore();
+    }
+
+    // Draw second-shock mark: red tint + lightning strands on pending enemies
+    function drawShockMark(entity) {
+      const hasPendingShock = swordShocks.some(sh => sh.enemy === entity && sh.timer > 0);
+      if (!hasPendingShock) return;
+      const now = performance.now() / 1000;
+
+      ctx.save();
+      ctx.globalCompositeOperation = "multiply";
+      ctx.fillStyle = "rgba(255,60,60,0.38)";
+      ctx.beginPath();
+      ctx.arc(0, 0, entity.r + 2, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+
+      ctx.save();
+      ctx.globalCompositeOperation = "lighter";
+      // 3 short jagged red lightning strands
+      for (let b = 0; b < 3; b++) {
+        const seed = now * (6 + b * 1.4) + b * 4.1 + entity.x * 0.02;
+        const startAng = (b / 3) * Math.PI * 2 + now * 1.2;
+        const x0 = Math.cos(startAng) * entity.r * 0.4;
+        const y0 = Math.sin(startAng) * entity.r * 0.4;
+        const x1 = Math.cos(startAng) * entity.r * 1.35 + Math.sin(seed * 2) * 5;
+        const y1 = Math.sin(startAng) * entity.r * 1.35 + Math.cos(seed * 1.7) * 5;
+        const mx = (x0 + x1) * 0.5 + Math.sin(seed * 2.3) * entity.r * 0.3;
+        const my = (y0 + y1) * 0.5 + Math.cos(seed * 1.9) * entity.r * 0.3;
+        ctx.strokeStyle = b % 2 === 0 ? "rgba(255,180,180,0.9)" : "rgba(255,80,80,0.85)";
+        ctx.lineWidth = 1.8;
+        ctx.shadowColor = "#ff2222";
+        ctx.shadowBlur = 8;
+        ctx.lineCap = "round";
+        ctx.beginPath();
+        ctx.moveTo(x0, y0);
+        ctx.lineTo(mx, my);
+        ctx.lineTo(x1, y1);
+        ctx.stroke();
+      }
       ctx.restore();
     }
 
@@ -3470,6 +4056,7 @@
       }
 
       drawElectrifiedCue(e);
+      drawShockMark(e);
 
       ctx.restore();
     }
@@ -3497,6 +4084,7 @@
       }
 
       drawElectrifiedCue(f);
+      drawShockMark(f);
 
       ctx.restore();
     }
@@ -3535,6 +4123,7 @@
       }
 
       drawElectrifiedCue(sk);
+      drawShockMark(sk);
 
       ctx.restore();
     }
@@ -4262,6 +4851,68 @@
       }
     }
 
+    // Drop trail (behind Kirby)
+    for (let i = 0; i < dropTrail.length; i++) {
+      const t = dropTrail[i];
+      const frac = t.life / t.maxLife;
+      const idx  = i / Math.max(dropTrail.length, 1);
+      ctx.save();
+      ctx.globalAlpha = frac * idx * 0.85;
+      const trailR = player.r * (0.3 + 0.7 * frac);
+      const g = ctx.createRadialGradient(t.x, t.y, 0, t.x, t.y, trailR);
+      g.addColorStop(0,   `rgba(255,255,200,${frac})`);
+      g.addColorStop(0.4, `rgba(255,160,40,${frac * 0.8})`);
+      g.addColorStop(1,   `rgba(255,60,0,0)`);
+      ctx.fillStyle = g;
+      ctx.shadowColor = "#ffaa00";
+      ctx.shadowBlur  = 12;
+      ctx.beginPath();
+      ctx.arc(t.x, t.y, trailR, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+
+    // Ground slam shockwaves
+    for (const sl of groundSlams) {
+      const progress  = 1 - sl.life / sl.maxLife;
+      const alpha     = sl.life / sl.maxLife;
+      const ringColor = sl.toughFeet ? "#ff4422" : "#44aaff";
+      ctx.save();
+      // Wide outer glow
+      ctx.globalAlpha = alpha * 0.4;
+      ctx.strokeStyle = ringColor;
+      ctx.lineWidth   = (1 - progress) * 16 + 2;
+      ctx.shadowColor = ringColor;
+      ctx.shadowBlur  = 24;
+      ctx.beginPath();
+      ctx.ellipse(sl.x, sl.y, sl.r, sl.r * 0.28, 0, 0, Math.PI * 2);
+      ctx.stroke();
+      // Inner crisp ring
+      ctx.globalAlpha = alpha * 0.9;
+      ctx.strokeStyle = sl.toughFeet ? "#ffccaa" : "#aaddff";
+      ctx.lineWidth   = (1 - progress) * 5 + 1;
+      ctx.shadowBlur  = 10;
+      ctx.beginPath();
+      ctx.ellipse(sl.x, sl.y, sl.r * 0.86, sl.r * 0.22, 0, 0, Math.PI * 2);
+      ctx.stroke();
+      // 8 radial crack sparks
+      ctx.globalAlpha = alpha * 0.75 * (1 - progress * 0.7);
+      for (let k = 0; k < 8; k++) {
+        const ang = (k / 8) * Math.PI * 2 - Math.PI / 2;
+        const sx  = sl.x + Math.cos(ang) * sl.r * 0.82;
+        const sy  = sl.y + Math.sin(ang) * sl.r * 0.22;
+        const ex  = sl.x + Math.cos(ang) * (sl.r + 16 * progress);
+        const ey  = sl.y + Math.sin(ang) * (sl.r * 0.26 + 9 * progress);
+        ctx.strokeStyle = sl.toughFeet ? "#ffaa66" : "#88ccff";
+        ctx.lineWidth   = 2.2;
+        ctx.shadowColor = sl.toughFeet ? "#ff6622" : "#44aaff";
+        ctx.shadowBlur  = 8;
+        ctx.beginPath();
+        ctx.moveTo(sx, sy); ctx.lineTo(ex, ey);
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
 
     // Quick Quas trail
     for (let i = 0; i < quasTrail.length; i++) {
@@ -4522,7 +5173,7 @@
     ctx.restore();
 
     // ── HP Bars + Damage Numbers ────────────────────────────────
-    const allEnemies = enemies.concat(flyers).concat(sirKibbles);
+    const allEnemies = allEnemies;
     for (const e of allEnemies) {
       if (!e.alive || !e.maxHp || e.hpBarTimer <= 0) continue;
 
@@ -4623,8 +5274,9 @@
   }
 
   function loop() {
-    if (!shopOpen) update();
+    if (!shopOpen && !statsOpen) update();
     draw();
+    if (statsOpen) renderStats();
     requestAnimationFrame(loop);
   }
   loop();
